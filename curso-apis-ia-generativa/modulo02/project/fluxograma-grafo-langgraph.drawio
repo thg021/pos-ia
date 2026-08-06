@@ -1,0 +1,88 @@
+<mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- START -->
+    <mxCell id="start" value="START" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="380" y="40" width="120" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- identifyIntentNode -->
+    <mxCell id="identify" value="identifyIntentNode&#10;(analisa a mensagem e define state.command)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="340" y="140" width="200" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- decision -->
+    <mxCell id="decision" value="routeByCommand&#10;state.command?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="360" y="260" width="160" height="90" as="geometry" />
+    </mxCell>
+
+    <!-- upperCaseNode -->
+    <mxCell id="upper" value="upperCaseNode&#10;(converte para MAIÚSCULO)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="80" y="420" width="180" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- lowerCaseNode -->
+    <mxCell id="lower" value="lowerCaseNode&#10;(converte para minúsculo)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="340" y="420" width="180" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- fallbackNode -->
+    <mxCell id="fallback" value="fallbackNode&#10;(comando não reconhecido)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="600" y="420" width="180" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- chatResponseNode -->
+    <mxCell id="chatresponse" value="chatResponseNode&#10;(monta state.output final)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="360" y="560" width="180" height="70" as="geometry" />
+    </mxCell>
+
+    <!-- END -->
+    <mxCell id="end" value="END&#10;reply.send(response.output)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="380" y="680" width="140" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- edges -->
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;" edge="1" source="start" target="identify" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;" edge="1" source="identify" target="decision" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e3" value="&quot;upper&quot;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" source="decision" target="upper" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e4" value="&quot;lower&quot;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="decision" target="lower" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e5" value="undefined&#10;(default)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d6b656;strokeWidth=2;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" source="decision" target="fallback" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.25;entryY=0;" edge="1" source="upper" target="chatresponse" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="lower" target="chatresponse" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d6b656;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.75;entryY=0;" edge="1" source="fallback" target="chatresponse" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;" edge="1" source="chatresponse" target="end" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- annotation -->
+    <mxCell id="note" value="POST /chat { question } -&gt; HumanMessage -&gt; graph.invoke() -&gt; response.output" style="text;html=1;align=center;fontSize=11;fontStyle=2;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="240" y="770" width="440" height="30" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

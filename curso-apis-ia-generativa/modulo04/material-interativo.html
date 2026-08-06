@@ -1,0 +1,1466 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Módulo 4 — Recomendador de música com memória</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Charter', 'Georgia', '"Iowan Old Style"', '"Times New Roman"', 'serif'],
+          sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+          mono: ['ui-monospace', '"SF Mono"', '"Cascadia Code"', '"Roboto Mono"', 'Consolas', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+:root {
+  --bg: #eef1ef;
+  --bg-elevated: #e2e8e2;
+  --ink: #171b18;
+  --ink-soft: #4a534c;
+  --ink-faint: #6f786f;
+  --line: #c7d0c7;
+  --accent-route: #b8862e;
+  --accent-route-soft: #b8862e33;
+  --accent-tutorial: #2f8f82;
+  --accent-tutorial-soft: #2f8f8222;
+  --accent-artigo: #7c6bb0;
+  --accent-artigo-soft: #7c6bb022;
+  --accent-quiz: #c1554a;
+  --accent-quiz-soft: #c1554a22;
+  /* Bloco de código: paleta fixa do tema Dracula (dracula-theme.com), independente
+     do tema claro/escuro da página em volta — código sempre lido sobre fundo escuro. */
+  --code-bg: #282a36;
+  --code-fg: #f8f8f2;
+  --code-line: #44475a;
+  --code-comment: #6272a4;
+  --code-string: #f1fa8c;
+  --code-keyword: #ff79c6;
+  --code-func: #50fa7b;
+  --code-number: #bd93f9;
+  --code-type: #8be9fd;
+  --font-display: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151a;
+    --bg-elevated: #191d22;
+    --ink: #e7ebe8;
+    --ink-soft: #aab3ac;
+    --ink-faint: #7c877e;
+    --line: #2b3230;
+    --accent-route: #e0ac4a;
+    --accent-route-soft: #e0ac4a2b;
+    --accent-tutorial: #4fb3a9;
+    --accent-tutorial-soft: #4fb3a92b;
+    --accent-artigo: #9a8cd6;
+    --accent-artigo-soft: #9a8cd62b;
+    --accent-quiz: #e07a6d;
+    --accent-quiz-soft: #e07a6d2b;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151a;
+  --bg-elevated: #191d22;
+  --ink: #e7ebe8;
+  --ink-soft: #aab3ac;
+  --ink-faint: #7c877e;
+  --line: #2b3230;
+  --accent-route: #e0ac4a;
+  --accent-route-soft: #e0ac4a2b;
+  --accent-tutorial: #4fb3a9;
+  --accent-tutorial-soft: #4fb3a92b;
+  --accent-artigo: #9a8cd6;
+  --accent-artigo-soft: #9a8cd62b;
+  --accent-quiz: #e07a6d;
+  --accent-quiz-soft: #e07a6d2b;
+}
+:root[data-theme="light"] {
+  --bg: #eef1ef;
+  --bg-elevated: #e2e8e2;
+  --ink: #171b18;
+  --ink-soft: #4a534c;
+  --ink-faint: #6f786f;
+  --line: #c7d0c7;
+  --accent-route: #b8862e;
+  --accent-route-soft: #b8862e33;
+  --accent-tutorial: #2f8f82;
+  --accent-tutorial-soft: #2f8f8222;
+  --accent-artigo: #7c6bb0;
+  --accent-artigo-soft: #7c6bb022;
+  --accent-quiz: #c1554a;
+  --accent-quiz-soft: #c1554a22;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--accent-route-soft); }
+
+a, button { font-family: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent-route); outline-offset: 2px; }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-route) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--accent-route) 50%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-route);
+}
+*::-webkit-scrollbar-corner { background: transparent; }
+
+.content h1, .content h2, .content h3, .content h4 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+  margin: 1.6em 0 0.5em;
+}
+.content h1 { display: none; }
+.content h2 { font-size: 1.35rem; border-top: 1px solid var(--line); padding-top: 0.9em; }
+.content h3 { font-size: 1.1rem; color: var(--ink); }
+.content h4 { font-size: 1rem; color: var(--ink-soft); }
+.content p { margin: 0 0 1.1em; color: var(--ink); }
+.content strong { color: var(--ink); }
+.content em { color: var(--ink-soft); }
+.content code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--bg-elevated);
+  padding: 0.12em 0.4em;
+  border-radius: 5px;
+}
+.content ul, .content ol { padding-left: 1.3em; margin: 0 0 1.2em; }
+.content li { margin: 0.35em 0; }
+.content li > ul, .content li > ol { margin-top: 0.35em; }
+.content blockquote {
+  border-left: 3px solid var(--accent-route);
+  margin: 0 0 1.2em;
+  padding: 0.2em 0 0.2em 1em;
+  color: var(--ink-soft);
+}
+.content blockquote p { margin-bottom: 0.6em; }
+.content hr { border: none; border-top: 1px solid var(--line); margin: 2em 0; }
+
+.code-card {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 10px;
+  margin: 0 0 1.4em;
+  overflow: hidden;
+  border: 1px solid var(--code-line);
+}
+.code-lang {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #93a099;
+  padding: 8px 14px 0;
+}
+.code-card pre {
+  margin: 0;
+  padding: 10px 14px 16px;
+  overflow-x: auto;
+}
+.code-card code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  background: none;
+  padding: 0;
+  color: inherit;
+  white-space: pre;
+}
+.tok-comment { color: var(--code-comment); font-style: italic; }
+.tok-string { color: var(--code-string); }
+.tok-keyword { color: var(--code-keyword); }
+.tok-func { color: var(--code-func); }
+.tok-number { color: var(--code-number); }
+.tok-type { color: var(--code-type); }
+
+.table-wrap { overflow-x: auto; margin: 0 0 1.4em; }
+.content table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+.content th, .content td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.content th {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  background: var(--bg-elevated);
+}
+
+.inline-link {
+  color: var(--accent-tutorial);
+  border-bottom: 1px solid var(--accent-tutorial-soft);
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding: 0;
+  font: inherit;
+}
+.inline-link:hover { border-bottom-color: var(--accent-tutorial); }
+
+.quiz-intro { color: var(--ink-soft); margin: 0 0 1.4em; }
+.quiz-wrap { display: flex; flex-direction: column; gap: 1.6em; }
+.quiz-question {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: var(--bg-elevated);
+}
+.quiz-q-text { font-weight: 600; margin-bottom: 0.9em; color: var(--ink); }
+.quiz-options { display: flex; flex-direction: column; gap: 0.55em; }
+.quiz-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6em;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.quiz-option:hover { border-color: var(--line); }
+.quiz-option input { margin-top: 0.3em; accent-color: var(--accent-quiz); flex-shrink: 0; }
+.quiz-option span { color: var(--ink-soft); }
+.quiz-option.is-correct {
+  border-color: var(--accent-tutorial);
+  background: var(--accent-tutorial-soft);
+}
+.quiz-option.is-correct span { color: var(--ink); }
+.quiz-option.is-wrong {
+  border-color: var(--accent-quiz);
+  background: var(--accent-quiz-soft);
+}
+.quiz-option.is-wrong span { color: var(--ink); }
+.quiz-feedback { margin-top: 0.7em; font-size: 0.85rem; font-weight: 600; min-height: 1.2em; }
+.quiz-feedback.is-correct-text { color: var(--accent-tutorial); }
+.quiz-feedback.is-wrong-text { color: var(--accent-quiz); }
+.quiz-score-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin: 0 0 1.4em;
+}
+.quiz-score { font-family: var(--font-mono); font-size: 0.92rem; color: var(--ink); font-weight: 600; }
+</style>
+</head>
+<body class="font-sans">
+<div class="flex flex-col md:flex-row w-full min-h-screen" style="background:var(--bg);color:var(--ink)">
+  <aside class="w-full md:w-[300px] md:shrink-0 border-b md:border-b-0 md:border-r border-[var(--line)] px-5 py-7 md:sticky md:top-0 md:h-screen overflow-y-auto flex flex-col gap-6">
+    <a href="../index.html" class="inline-flex items-center gap-1 text-[0.78rem] font-medium" style="color:var(--ink-faint)">&larr; Início</a>
+    <div>
+      <div class="font-mono text-[0.68rem] tracking-[0.12em] uppercase" style="color:var(--accent-route)">Módulo 4 · APIs de IA Generativa</div>
+      <h1 class="font-display text-[1.35rem] leading-tight mt-1 text-balance">Recomendador de música com memória</h1>
+      <p class="text-[0.85rem] mt-1.5" style="color:var(--ink-soft)">Preferências, histórico e resumo — como um agente "conhece" o cliente sem estourar o contexto. Clique numa estação para ler.</p>
+    </div>
+    <nav class="relative flex flex-col" id="route"></nav>
+    <div class="mt-auto pt-4 border-t text-[0.78rem]" style="border-color:var(--line);color:var(--ink-faint)">
+      Progresso salvo neste navegador. Código-fonte do projeto em
+      <code class="font-mono text-[0.92em] px-1 py-0.5 rounded" style="background:var(--bg-elevated)">docs/curso-apis-ia-generativa/modulo04/</code>.
+    </div>
+  </aside>
+  <main class="flex-1 min-w-0 w-full px-6 md:px-10 lg:px-16 py-12 pb-24">
+    <div class="flex flex-wrap items-baseline gap-3 mb-1">
+      <span class="font-mono text-[0.72rem] tracking-[0.1em] uppercase" style="color:var(--accent-route)" id="lessonEyebrow"></span>
+    </div>
+    <h2 class="font-display text-[clamp(1.6rem,3vw,2.15rem)] leading-tight mt-1.5 mb-4 text-balance" id="lessonTitle"></h2>
+    <div id="typeToggleWrap"></div>
+    <span id="docTag"></span>
+    <article class="content w-full" id="content"></article>
+    <div class="mt-10 pt-5 border-t flex justify-between items-center gap-4 flex-wrap" style="border-color:var(--line)">
+      <label class="flex items-center gap-2 text-[0.88rem]" style="color:var(--ink-soft)">
+        <input type="checkbox" id="markDone" class="w-4 h-4" style="accent-color:var(--accent-route)" />
+        <span id="markDoneLabel">Marcar como concluído</span>
+      </label>
+      <div class="flex gap-2.5">
+        <button id="prevBtn" type="button" class="text-[0.82rem] px-3.5 py-2 border border-[var(--line)] text-[var(--ink-soft)] rounded-lg transition-colors hover:border-[var(--accent-route)] hover:text-[var(--ink)] disabled:opacity-35 disabled:pointer-events-none">&larr; Anterior</button>
+        <button id="nextBtn" type="button" class="text-[0.82rem] px-3.5 py-2 border border-[var(--line)] text-[var(--ink-soft)] rounded-lg transition-colors hover:border-[var(--accent-route)] hover:text-[var(--ink)] disabled:opacity-35 disabled:pointer-events-none">Próxima &rarr;</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="text/plain" id="doc-01-artigo">
+# Memória em agentes de IA: preferências, histórico e resumo
+
+> Este artigo cobre as 4 aulas do módulo (recomendador de música, extração de preferências, armazenamento de memória, resumo de histórico) porque, assim como no módulo 3, elas constroem um único projeto contínuo — um assistente de recomendação musical que vai "conhecendo" o cliente ao longo da conversa.
+
+## O problema: contexto tem um limite, e ele custa dinheiro
+
+Todo modelo de LLM tem uma **janela de contexto** — um limite de quantos tokens ele consegue "ver" por chamada. Se você simplesmente for empilhando todo o histórico de uma conversa longa dentro do prompt, dois problemas aparecem: o custo por chamada sobe (mais tokens = mais caro) e, eventualmente, você estoura o limite da janela. Este módulo é sobre como lidar com isso de forma estruturada, em vez de simplesmente "jogar tudo no prompt e torcer".
+
+## Dois tipos de memória, dois problemas diferentes
+
+O módulo separa memória em duas categorias que resolvem problemas distintos:
+
+- **Memória de curto prazo (short-term memory):** o histórico de mensagens de uma conversa específica (uma *thread*). Serve para o modelo lembrar o que foi dito há poucas mensagens, dentro da mesma sessão.
+- **Memória de longo prazo (long-term memory):** informações que persistem **entre conversas diferentes** — as preferências de um cliente específico (nome, idade, gêneros musicais favoritos, bandas que gosta), que continuam disponíveis mesmo que o cliente volte dias depois e comece uma conversa nova.
+
+Essa distinção importa porque cada uma tem uma estratégia de armazenamento diferente: o histórico de conversas tende a crescer (e precisa ser gerenciado/resumido), enquanto as preferências tendem a ser um conjunto pequeno e estável de fatos sobre o cliente — que pode (e deve) ser injetado em praticamente todo prompt, porque é barato em tokens e traz muito valor de personalização.
+
+## Extraindo preferências como um efeito colateral da conversa
+
+Em vez de fazer um formulário ou perguntar explicitamente "qual sua idade? qual seu gênero musical favorito?", o agente **extrai preferências implicitamente** de qualquer coisa que o cliente diga — se ele mencionar "adoro Foo Fighters" no meio de uma pergunta sobre outra coisa, isso já é capturado e persistido. Tecnicamente, isso usa a mesma técnica de **output estruturado** do módulo anterior: a cada mensagem, um schema pergunta ao modelo "que preferências dá para extrair daqui, se houver alguma?" — e o resultado é mesclado com o que já se sabia sobre aquele cliente (atualizando, não duplicando, quando a informação muda).
+
+## Onde cada tipo de dado é armazenado
+
+O projeto do módulo usa **dois bancos de dados diferentes**, de propósito — para mostrar as opções disponíveis, não porque seja estritamente necessário:
+- **PostgreSQL**: armazena o histórico completo de mensagens de cada conversa (via os mecanismos nativos do LangGraph de *checkpointer* e *store*), permitindo retomar exatamente de onde uma conversa parou.
+- **SQLite** (com um query builder simples, não um ORM completo): armazena as preferências extraídas de cada cliente — um conjunto de dados pequeno, que é lido no início de cada conversa nova para "lembrar" quem é aquele cliente.
+
+## O checkpoint: retomar uma conversa de onde parou
+
+O conceito de **checkpoint** do LangGraph é o que permite a um cliente encerrar uma conversa e, dias depois, continuar exatamente de onde parou — sem perder contexto. Isso é feito automaticamente pelo framework quando você configura um *checkpointer* (nesse caso, apontando para o PostgreSQL) na hora de compilar o grafo.
+
+## Resumindo o histórico: comprimir sem perder o essencial
+
+A segunda metade do módulo resolve o problema de a conversa crescer demais: em vez de guardar cada mensagem trocada indefinidamente, o agente monitora o tamanho do histórico e, ao ultrapassar um limite configurável (ex: mais de 6 mensagens), **gera um resumo** do que já foi conversado — e substitui as mensagens antigas por esse resumo, mantendo só as últimas 1-2 mensagens "crua" no estado.
+
+Esse resumo em si é gerado por outra chamada de LLM (com seu próprio schema), que recebe o histórico completo mais qualquer resumo anterior (se já existir um), e produz uma nova versão consolidada. Isso significa que o processo é **incremental**: a cada vez que o limite é atingido de novo, o resumo anterior é combinado com as mensagens novas, em vez de recomeçar do zero.
+
+## Por que isso é importante em produção
+
+O ponto central do módulo (reforçado várias vezes pelo instrutor) é que esse tipo de gestão de memória **não é opcional em uma aplicação real** — é algo que qualquer produto com conversas longas (assistentes, chatbots de suporte, agentes de vendas) precisa resolver, porque sem isso o custo por conversa cresce sem limite e, eventualmente, a aplicação simplesmente para de funcionar quando estoura a janela de contexto do modelo.
+
+## Verifique seu entendimento
+
+1. Qual a diferença entre memória de curto prazo e memória de longo prazo, e por que elas costumam usar armazenamentos diferentes?
+2. Como o agente extrai preferências dos clientes sem usar um formulário explícito?
+3. O que é um "checkpoint" no contexto do LangGraph, e que problema ele resolve?
+4. Por que resumir o histórico é incremental (junta o resumo anterior com as mensagens novas) em vez de sempre resumir do zero?
+5. O que aconteceria com o custo e a confiabilidade de uma aplicação de chat se ela nunca resumisse ou limitasse o histórico de conversa?
+</script>
+
+<script type="text/plain" id="doc-01-tutorial">
+# Tutorial: recomendador de música com preferências e memória persistente
+
+Este tutorial constrói um assistente de recomendação musical (via linha de comando) que extrai preferências do cliente durante a conversa, guarda o histórico de mensagens em Postgres, guarda as preferências em SQLite, e resume a conversa automaticamente quando ela cresce demais.
+
+## Passo 0 — Infraestrutura
+
+```bash
+npm install @langchain/langgraph-checkpoint-postgres pg
+npm install better-sqlite3 knex
+docker compose up -d
+```
+
+## Passo 1 — Estado do grafo
+
+```typescript
+// src/graph/graph.ts
+const GraphStateSchema = z.object({
+  messages: z.custom<BaseMessage[]>().default(() => []),
+  userId: z.string().optional(),
+  userContext: z.string().optional(),
+  extractedPreferences: z
+    .object({
+      name: z.string().optional(),
+      age: z.number().optional(),
+      genres: z.array(z.string()).optional(),
+      bands: z.array(z.string()).optional(),
+    })
+    .optional(),
+  shouldSavePreferences: z.boolean().optional(),
+  conversationSummary: z.string().optional(),
+  needsSummarization: z.boolean().optional(),
+});
+
+export type GraphState = z.infer<typeof GraphStateSchema>;
+```
+
+## Passo 2 — O serviço de memória (checkpoint + store no Postgres)
+
+```typescript
+// src/services/memoryService.ts
+import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
+import { PostgresStore } from "@langchain/langgraph-checkpoint-postgres/store";
+
+export async function createMemoryService(connectionString: string) {
+  const store = PostgresStore.fromConnString(connectionString);
+  const checkpointer = PostgresSaver.fromConnString(connectionString);
+
+  await store.setup();
+  await checkpointer.setup();
+
+  return { checkpointer, store };
+}
+```
+
+`checkpointer` guarda o estado do grafo por *thread* (permitindo retomar uma conversa exatamente de onde parou); `store` é usado para dados que precisam sobreviver entre threads diferentes do mesmo usuário.
+
+## Passo 3 — O serviço de preferências (SQLite)
+
+```typescript
+// src/services/preferencesService.ts
+export class PreferencesService {
+  async getBasicInfo(userId: string) {
+    return this.db("user_preferences").where({ user_id: userId }).first();
+  }
+
+  async mergePreferences(userId: string, newData: Record<string, unknown>) {
+    const existing = await this.getBasicInfo(userId);
+    const merged = { ...existing, ...newData, user_id: userId, updated_at: new Date().toISOString() };
+
+    await this.db("user_preferences").insert(merged).onConflict("user_id").merge();
+  }
+}
+```
+
+O ponto-chave de `mergePreferences`: ele **mescla** o que já existia com o dado novo, em vez de sobrescrever tudo.
+
+## Passo 4 — Ligando tudo na factory
+
+```typescript
+// src/graph/factory.ts
+export async function buildAppGraph() {
+  const memoryService = await createMemoryService(config.memoryDbUrl);
+  const preferencesService = new PreferencesService(config.preferencesDbPath);
+  const llmClient = new OpenRouterService();
+
+  const graph = buildGraph(llmClient, preferencesService);
+
+  return graph.compile({
+    checkpointer: memoryService.checkpointer,
+    store: memoryService.store,
+  });
+}
+```
+
+## Passo 5 — O nó `chatNode`: montar o histórico como texto e chamar a IA
+
+```typescript
+// src/graph/chatNode.ts
+export function createChatNode(llmClient, preferencesService) {
+  return async function chatNode(state, runtime) {
+    const userId = runtime.context?.userId ?? state.userId ?? "anonimo";
+
+    let userContext = state.userContext;
+    if (!userContext) {
+      const basicInfo = await preferencesService.getBasicInfo(userId);
+      userContext = basicInfo ? JSON.stringify(basicInfo) : "";
+    }
+
+    const result = await llmClient.generateStructured(systemPrompt, userPrompt, ChatResponseSchema);
+
+    return {
+      messages: [...state.messages, new AIMessage(result.data.message)],
+      extractedPreferences: result.data.shouldSavePreferences ? result.data.preferences : undefined,
+      needsSummarization: state.messages.length > config.maxMessagesToSummarize,
+    };
+  };
+}
+```
+
+`userContext` só é buscado no banco se ainda não estiver no estado — evitando uma consulta redundante a cada mensagem da mesma conversa.
+
+## Passo 6 — O nó `savePreferencesNode`
+
+```typescript
+export function createSavePreferencesNode(preferencesService) {
+  return async function savePreferencesNode(state) {
+    if (!state.extractedPreferences) return {};
+
+    await preferencesService.mergePreferences(state.userId, state.extractedPreferences);
+    return { extractedPreferences: undefined };
+  };
+}
+```
+
+## Passo 7 — Roteamento condicional: salvar preferências e/ou resumir
+
+```typescript
+function routeAfterChat(state) {
+  if (state.extractedPreferences) return "savePreferencesNode";
+  if (state.needsSummarization) return "summarizeNode";
+  return END;
+}
+
+function routeAfterSavePreferences(state) {
+  return state.needsSummarization ? "summarizeNode" : END;
+}
+```
+
+## Passo 8 — O nó de resumo (`summarizeNode`)
+
+```typescript
+export function createSummarizeNode(llmClient, preferencesService) {
+  return async function summarizeNode(state) {
+    const result = await llmClient.generateStructured(systemPrompt, userPrompt, SummarySchema);
+
+    const messagesToRemove = state.messages.slice(0, -2).map((msg) => new RemoveMessage({ id: msg.id }));
+
+    return {
+      messages: messagesToRemove,
+      conversationSummary: result.data.summary,
+      needsSummarization: false,
+    };
+  };
+}
+```
+
+`RemoveMessage` é um tipo especial do LangGraph que, quando incluído no retorno de um nó, instrui o *reducer* de mensagens a **remover** aquela mensagem específica do estado acumulado.
+
+## Passo 9 — Montando o grafo completo
+
+```typescript
+export function buildGraph(llmClient, preferencesService) {
+  const workflow = new StateGraph(GraphStateSchema)
+    .addNode("chatNode", createChatNode(llmClient, preferencesService))
+    .addNode("savePreferencesNode", createSavePreferencesNode(preferencesService))
+    .addNode("summarizeNode", createSummarizeNode(llmClient, preferencesService))
+    .addEdge(START, "chatNode")
+    .addConditionalEdges("chatNode", routeAfterChat, {
+      savePreferencesNode: "savePreferencesNode",
+      summarizeNode: "summarizeNode",
+      [END]: END,
+    })
+    .addConditionalEdges("savePreferencesNode", routeAfterSavePreferences, {
+      summarizeNode: "summarizeNode",
+      [END]: END,
+    })
+    .addEdge("summarizeNode", END);
+
+  return workflow.compile();
+}
+```
+
+## Passo 10 — Testando via linha de comando
+
+```bash
+npm run chat -- --user=eric-wendel
+```
+
+Converse normalmente, mencionando nome, idade, bandas e gêneros favoritos aos poucos. Depois de encerrar (`Ctrl+C`) e rodar o comando de novo com o mesmo `--user`, o assistente deve recuperar as preferências salvas e continuar de onde parou.
+
+## Onde isso te deixa
+
+Você tem agora um agente que: mantém histórico de conversa persistente (Postgres + checkpoints), extrai e atualiza preferências de cada cliente automaticamente (SQLite), e gerencia o tamanho do contexto resumindo o histórico de forma incremental.
+
+## Verifique seu entendimento
+
+1. Por que o projeto usa `checkpointer` e `store` como dois objetos separados, mesmo apontando para o mesmo banco de dados?
+2. O que `mergePreferences` faz de diferente de simplesmente sobrescrever o registro do usuário no banco?
+3. Para que serve o tipo especial `RemoveMessage`, e por que ele é necessário para "podar" o histórico depois de um resumo?
+4. Se você aumentasse `maxMessagesToSummarize` de 6 para 200, que trade-off isso implicaria em termos de custo de tokens vs. frequência de resumo?
+</script>
+
+<script type="text/plain" id="doc-02-anotacao">
+# Anotação: explicação linha a linha do projeto do módulo 4
+
+Este documento explica, arquivo por arquivo, o projeto criado em `docs/curso-apis-ia-generativa/modulo04/project/` — um assistente de recomendação musical via linha de comando que extrai preferências implicitamente, guarda histórico em Postgres e preferências em SQLite, e resume o histórico automaticamente.
+
+## Visão geral: o desenho do grafo
+
+```
+START → chatNode ─┬─ extractedPreferences? ──→ savePreferencesNode ─┬─ needsSummarization? ──→ summarizeNode → END
+                   ├─ needsSummarization? ─────────────────────────→ summarizeNode ──────────────────────────→ END
+                   └─ nenhum dos dois ─────────────────────────────────────────────────────────────────────→ END
+```
+
+Diferente do módulo 3 (onde cada intenção levava a um nó de ação diferente), aqui existe **um só** nó de conversa — o roteamento condicional decide **que efeitos colaterais processar depois** da resposta já gerada: salvar preferências novas e/ou resumir o histórico.
+
+## `src/config.ts`
+
+```typescript
+export const memoryDbUrl = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/modulo04";
+export const preferencesDbPath = process.env.PREFERENCES_DB_PATH ?? "./data/preferences.db";
+export const maxMessagesToSummarize = Number(process.env.MAX_MESSAGES_TO_SUMMARIZE ?? 6);
+```
+
+Três constantes de infraestrutura novas em relação ao módulo 3: Postgres, SQLite e o limite de resumo. `Number(...)` é necessário porque variáveis de ambiente sempre chegam como string.
+
+## `src/services/memoryService.ts` — checkpointer e store no Postgres
+
+```typescript
+export async function createMemoryService(connectionString: string) {
+  const store = PostgresStore.fromConnString(connectionString);
+  const checkpointer = PostgresSaver.fromConnString(connectionString);
+
+  await store.setup();
+  await checkpointer.setup();
+
+  return { checkpointer, store };
+}
+```
+
+`checkpointer` guarda o estado do grafo por thread; `store` existe para dados que sobrevivem entre threads diferentes do mesmo usuário. `.setup()` cria as tabelas internas no Postgres na primeira vez.
+
+## `src/services/preferencesService.ts` — preferências no SQLite
+
+```typescript
+private async migrate(): Promise<void> {
+  const exists = await this.db.schema.hasTable(TABLE_NAME);
+  if (exists) return;
+
+  await this.db.schema.createTable(TABLE_NAME, (table) => {
+    table.string("user_id").primary();
+    table.text("genres");
+    table.text("bands");
+  });
+}
+
+async mergePreferences(userId: string, newData: Record<string, unknown>): Promise<void> {
+  const existing = await this.getBasicInfo(userId);
+  const merged = this.serialize({ ...existing, ...newData, user_id: userId });
+
+  await this.db(TABLE_NAME).insert(merged).onConflict("user_id").merge();
+}
+```
+
+`genres`/`bands` são colunas de texto (SQLite não tem array nativo) — o serviço serializa como JSON antes de gravar e desserializa ao ler. A tabela é auto-criada na primeira execução, sem uma pasta `migrations/` versionada.
+
+## `src/graph/chatNode.ts` — o nó central da conversa
+
+```typescript
+export function createChatNode(llmClient: OpenRouterService, preferencesService: PreferencesService) {
+  return async function chatNode(state: GraphState): Promise<Partial<GraphState>> {
+    const userId = state.userId ?? "anonimo";
+
+    let userContext = state.userContext;
+    if (!userContext) {
+      const basicInfo = await preferencesService.getBasicInfo(userId);
+      userContext = basicInfo ? JSON.stringify(basicInfo) : "";
+    }
+
+    const result = await llmClient.generateStructured(systemPrompt, userPrompt, ChatResponseSchema);
+
+    return {
+      messages: [new AIMessage(result.data.message)],
+      userContext,
+      extractedPreferences: result.data.shouldSavePreferences ? preferences : undefined,
+      needsSummarization: state.messages.length + 1 > maxMessagesToSummarize,
+    };
+  };
+}
+```
+
+Repare que o nó devolve **só a mensagem nova** (`[new AIMessage(...)]`), não `[...state.messages, novaMsg]` como no módulo 3 — isso só funciona porque `messages`, em `graph.ts`, usa um reducer customizado (ver abaixo). O `+1` no cálculo de `needsSummarization` compensa o fato de a mensagem recém-gerada ainda não estar em `state.messages` neste ponto do código.
+
+## `src/graph/summarizeNode.ts`
+
+```typescript
+const messagesToRemove = state.messages.slice(0, -2).map((msg) => new RemoveMessage({ id: msg.id! }));
+
+return {
+  messages: messagesToRemove,
+  conversationSummary: result.data.summary,
+  needsSummarization: false,
+};
+```
+
+`RemoveMessage` é um tipo especial que, incluído no retorno de um nó, instrui o reducer de mensagens a **remover** aquela mensagem específica do estado — em vez de adicionar mais uma. `slice(0, -2)` seleciona todas as mensagens exceto as duas últimas (pergunta + resposta mais recentes), que continuam "cruas" no estado junto com o resumo.
+
+## `src/graph/graph.ts` — o coração do grafo
+
+```typescript
+import { StateGraph, START, END, messagesStateReducer } from "@langchain/langgraph";
+import "@langchain/langgraph/zod";
+
+const GraphStateSchema = z.object({
+  messages: z
+    .custom<BaseMessage[]>()
+    .default(() => [])
+    .langgraph.reducer(messagesStateReducer, z.custom<BaseMessageLike | BaseMessageLike[]>()),
+  userId: z.string().optional(),
+  extractedPreferences: z.object({ /* ... */ }).optional(),
+  conversationSummary: z.string().optional(),
+  needsSummarization: z.boolean().optional(),
+});
+```
+
+`import "@langchain/langgraph/zod"` é um import de efeito colateral que registra o método `.langgraph` em todo `ZodType`. `.langgraph.reducer(messagesStateReducer, ...)` diz ao LangGraph para **fundir** o retorno parcial de cada nó com o estado acumulado (em vez de substituir o array inteiro) — é isso que permite `RemoveMessage` remover mensagens de verdade.
+
+```typescript
+function routeAfterChat(state: GraphState): string {
+  if (state.extractedPreferences) return "savePreferencesNode";
+  if (state.needsSummarization) return "summarizeNode";
+  return END;
+}
+
+function routeAfterSavePreferences(state: GraphState): string {
+  return state.needsSummarization ? "summarizeNode" : END;
+}
+```
+
+Duas funções de roteamento, porque depois de `chatNode` podem existir até dois efeitos colaterais pendentes ao mesmo tempo (salvar preferências e resumir).
+
+## `src/graph/factory.ts`
+
+```typescript
+export async function buildAppGraph() {
+  const memoryService = await createMemoryService(memoryDbUrl);
+  const preferencesService = new PreferencesService(preferencesDbPath);
+  const llmClient = new OpenRouterService();
+
+  const graph = buildGraph(llmClient, preferencesService);
+
+  return graph.compile({
+    checkpointer: memoryService.checkpointer,
+    store: memoryService.store,
+  });
+}
+
+export const graph = await buildAppGraph();
+```
+
+`buildGraph` (em `graph.ts`) devolve um `StateGraph` **não compilado** — quem compila (conectando checkpointer/store) é esta factory. `export const graph = await buildAppGraph()` usa top-level await para expor uma instância já pronta, reaproveitada tanto pelo CLI quanto pelo `langgraph.json` (Studio).
+
+## `src/cli.ts` e `src/index.ts`
+
+```typescript
+const config = { configurable: { thread_id: userId } };
+
+const result = await graph.invoke(
+  { messages: [new HumanMessage(question)], userId },
+  config,
+);
+```
+
+O `thread_id` (o próprio `userId`) é o que permite ao checkpointer recuperar automaticamente o histórico salvo daquele usuário na próxima execução do CLI. `src/index.ts` só faz `import "./cli.ts"` — toda a lógica de fato mora em `cli.ts`.
+
+## Decisões de projeto que complementam o tutorial
+
+### 1. Reducer nativo (`messagesStateReducer`) em vez de reatribuição manual do array
+
+`messages` usa `.langgraph.reducer(messagesStateReducer, ...)`, e por isso os nós devolvem só as mensagens novas (ou `RemoveMessage`s) — nunca o array reconstruído na mão. Isso é o que permite `summarizeNode` podar mensagens de verdade.
+
+### 2. Nós com `(state: GraphState)`, sem o `runtime: { context }` do tutorial
+
+O tutorial mostra `(state, runtime: { context })`, lendo `userId` via `runtime.context?.userId`. O código real usa só `(state: GraphState)`, lendo `state.userId` diretamente — a assinatura do tutorial não bateu com a API real da versão do LangGraph usada aqui.
+
+### 3. `src/index.ts` é só um `import`; a lógica de CLI vive em `src/cli.ts`
+
+`cli.ts` concentra `readline`, parsing de `--user=` e o loop de conversa; `index.ts` só faz `import "./cli.ts"`, mantendo a convenção "processo começa em `src/index.ts`" mesmo sem servidor HTTP.
+
+### 4. `factory.ts` exporta uma função e uma instância
+
+`buildAppGraph()` monta tudo do zero (reutilizável); `export const graph = await buildAppGraph()` expõe uma instância já pronta para o CLI e o `langgraph.json`.
+
+### 5. SQLite: arrays como JSON em coluna de texto, tabela auto-criada
+
+`genres`/`bands` são serializados como JSON em colunas de texto (SQLite não tem array nativo); `user_preferences` é auto-criada via `knex.schema.hasTable`/`createTable` no primeiro uso, sem pasta de migrations versionada.
+
+## Verifique seu entendimento
+
+1. Por que `messages` precisa de um reducer customizado neste projeto, se o módulo 3 conseguia se virar sem nenhum reducer especial?
+2. O que aconteceria se `chatNode` consultasse `preferencesService.getBasicInfo` em toda mensagem, sem checar `state.userContext` antes?
+3. Por que existem duas funções de roteamento (`routeAfterChat` e `routeAfterSavePreferences`) neste grafo, em vez de uma só?
+4. Por que `buildGraph` devolve um `StateGraph` não compilado, deixando a compilação para `factory.ts` ou para o teste?
+5. O que aconteceria com o histórico se `summarizeNode` gerasse um resumo, mas não incluísse nenhum `RemoveMessage` no retorno?
+</script>
+
+<script>
+const LESSONS = [
+  {
+    "id": "01-artigo",
+    "file": "01-artigo-memoria-preferencias-e-resumo.md",
+    "aula": 1,
+    "tipo": "artigo",
+    "title": "Memória em agentes de IA: preferências, histórico e resumo",
+    "label": "Memória, preferências e resumo"
+  },
+  {
+    "id": "01-tutorial",
+    "file": "01-tutorial-recomendador-de-musica-com-memoria.md",
+    "aula": 1,
+    "tipo": "tutorial",
+    "title": "Tutorial: recomendador de música com preferências e memória persistente",
+    "label": "Recomendador de música com memória"
+  },
+  {
+    "id": "02-anotacao",
+    "file": "02-anotacao-projeto-recomendador-musica-memoria.md",
+    "aula": 2,
+    "tipo": "anotacao",
+    "title": "Anotação: explicação linha a linha do projeto do módulo 4",
+    "label": "Explicação linha a linha do projeto"
+  },
+  {
+    "id": "03-quiz",
+    "file": "03-quiz-revisao-modulo04.md",
+    "aula": 3,
+    "tipo": "quiz",
+    "title": "Quiz de revisão — Módulo 4",
+    "label": "Quiz de revisão"
+  }
+];
+const FILE_TO_ID = {
+  "01-artigo-memoria-preferencias-e-resumo.md": "01-artigo",
+  "01-tutorial-recomendador-de-musica-com-memoria.md": "01-tutorial",
+  "02-anotacao-projeto-recomendador-musica-memoria.md": "02-anotacao",
+  "03-quiz-revisao-modulo04.md": "03-quiz"
+};
+
+const STATIONS = [1, 2, 3].map((aula) => ({
+  aula,
+  docs: LESSONS.filter((l) => l.aula === aula),
+}));
+
+const STATION_EYEBROW = {
+  artigo: "Aulas 1-4",
+  tutorial: "Aulas 1-4",
+  anotacao: "Anotação final",
+  quiz: "Revisão",
+};
+const TIPO_LABEL = {
+  artigo: "conceito",
+  tutorial: "mão na massa",
+  anotacao: "explicação de código",
+  quiz: "quiz interativo",
+};
+const TIPO_TAG = { artigo: "Artigo", tutorial: "Tutorial", anotacao: "Anotação", quiz: "Quiz" };
+const DOT_LABEL = { artigo: "1-4", tutorial: "1-4", anotacao: "★", quiz: "?" };
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function inline(text) {
+  let t = escapeHtml(text);
+  t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+  t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, href) => {
+    const targetId = FILE_TO_ID[href];
+    if (targetId) {
+      return '<button type="button" class="inline-link" data-nav="' + targetId + '">' + label + "</button>";
+    }
+    return label;
+  });
+  return t;
+}
+
+function renderTable(headerLine, bodyLines) {
+  const splitRow = (line) =>
+    line
+      .split("|")
+      .map((s) => s.trim())
+      .filter((s, idx, arr) => !(idx === 0 && s === "") && !(idx === arr.length - 1 && s === ""));
+  const header = splitRow(headerLine);
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  header.forEach((h) => (html += "<th>" + inline(h) + "</th>"));
+  html += "</tr></thead><tbody>";
+  bodyLines.forEach((line) => {
+    const cells = splitRow(line);
+    html += "<tr>";
+    cells.forEach((c) => (html += "<td>" + inline(c) + "</td>"));
+    html += "</tr>";
+  });
+  html += "</tbody></table></div>";
+  return html;
+}
+
+function buildList(items) {
+  let idx = 0;
+  function parseLevel(indent) {
+    let out = "";
+    let type = "ul";
+    while (idx < items.length && items[idx].indent >= indent) {
+      const item = items[idx];
+      type = item.ordered ? "ol" : "ul";
+      idx++;
+      let child = "";
+      if (idx < items.length && items[idx].indent > indent) {
+        child = parseLevel(items[idx].indent);
+      }
+      out += "<li>" + inline(item.text) + child + "</li>";
+    }
+    return "<" + type + ">" + out + "</" + type + ">";
+  }
+  return parseLevel(items[0] ? items[0].indent : 0);
+}
+
+function isTableSeparator(line) {
+  return /^\s*\|?[\s:-]+\|[\s:|-]*$/.test(line) && line.includes("-");
+}
+
+const JS_KEYWORDS = new Set([
+  "import", "export", "default", "from", "as", "const", "let", "var", "function",
+  "return", "if", "else", "for", "while", "do", "switch", "case", "break", "continue",
+  "async", "await", "new", "type", "interface", "class", "extends", "implements",
+  "typeof", "instanceof", "in", "of", "this", "super", "static", "public", "private",
+  "protected", "readonly", "enum", "void", "throw", "try", "catch", "finally", "yield",
+  "delete", "true", "false", "null", "undefined",
+]);
+
+function highlightCode(code) {
+  const tokenRegex =
+    /(\/\/[^\n]*)|(\/\*[\s\S]*?\*\/)|(`(?:\\.|[^`\\])*`)|("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][A-Za-z0-9_$]*)|(\s+)|([^\sA-Za-z0-9_$'"`]+)|(.)/g;
+  let out = "";
+  let m;
+  while ((m = tokenRegex.exec(code))) {
+    if (m[1] || m[2]) {
+      out += '<span class="tok-comment">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[3] || m[4] || m[5]) {
+      out += '<span class="tok-string">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[6]) {
+      out += '<span class="tok-number">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[7]) {
+      const word = m[0];
+      if (JS_KEYWORDS.has(word)) {
+        out += '<span class="tok-keyword">' + escapeHtml(word) + "</span>";
+      } else if (/^[A-Z]/.test(word)) {
+        out += '<span class="tok-type">' + escapeHtml(word) + "</span>";
+      } else if (/^\s*\(/.test(code.slice(tokenRegex.lastIndex))) {
+        out += '<span class="tok-func">' + escapeHtml(word) + "</span>";
+      } else {
+        out += escapeHtml(word);
+      }
+    } else {
+      out += escapeHtml(m[0]);
+    }
+  }
+  return out;
+}
+
+function parseMarkdown(md) {
+  const lines = md.split("\n");
+  let html = "";
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (/^\s*$/.test(line)) {
+      i++;
+      continue;
+    }
+
+    const fence = line.match(/^```(\w*)/);
+    if (fence) {
+      const lang = fence[1] || "texto";
+      const codeLines = [];
+      i++;
+      while (i < lines.length && !/^```/.test(lines[i])) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      i++;
+      html +=
+        '<div class="code-card"><div class="code-lang">' +
+        escapeHtml(lang) +
+        "</div><pre><code>" +
+        highlightCode(codeLines.join("\n")) +
+        "</code></pre></div>";
+      continue;
+    }
+
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if (h) {
+      const level = h[1].length;
+      html += "<h" + level + ">" + inline(h[2]) + "</h" + level + ">";
+      i++;
+      continue;
+    }
+
+    if (/^-{3,}\s*$/.test(line)) {
+      html += "<hr>";
+      i++;
+      continue;
+    }
+
+    if (/^>\s?/.test(line)) {
+      const qLines = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        qLines.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      html += "<blockquote>" + parseMarkdown(qLines.join("\n")) + "</blockquote>";
+      continue;
+    }
+
+    if (line.includes("|") && lines[i + 1] && isTableSeparator(lines[i + 1])) {
+      const headerLine = line;
+      const bodyLines = [];
+      i += 2;
+      while (i < lines.length && lines[i].includes("|") && lines[i].trim() !== "") {
+        bodyLines.push(lines[i]);
+        i++;
+      }
+      html += renderTable(headerLine, bodyLines);
+      continue;
+    }
+
+    if (/^\s*(-\s+|\d+\.\s+)/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*(-\s+|\d+\.\s+)/.test(lines[i])) {
+        const m = lines[i].match(/^(\s*)(-\s+|(\d+)\.\s+)(.*)$/);
+        items.push({ indent: m[1].length, ordered: !!m[3], text: m[4] });
+        i++;
+      }
+      html += buildList(items);
+      continue;
+    }
+
+    const pLines = [];
+    while (
+      i < lines.length &&
+      lines[i].trim() !== "" &&
+      !/^(#{1,4}\s|```|>\s?|-{3,}\s*$|\s*(-\s+|\d+\.\s+))/.test(lines[i])
+    ) {
+      pLines.push(lines[i]);
+      i++;
+    }
+    if (pLines.length) {
+      html += "<p>" + inline(pLines.join(" ")) + "</p>";
+    } else {
+      i++;
+    }
+  }
+  return html;
+}
+
+// ---------- Quiz interativo (03-quiz-revisao-modulo04.md) ----------
+const QUIZ_DATA = [
+  {
+    q: "Qual é a diferença central entre memória de curto prazo e memória de longo prazo, no contexto deste módulo?",
+    options: [
+      "Memória de curto prazo é mais cara em tokens; memória de longo prazo é sempre gratuita para qualquer modelo usado",
+      "Memória de curto prazo é o histórico de uma conversa (thread); memória de longo prazo são preferências que persistem entre conversas diferentes",
+      "Memória de curto prazo só existe no SQLite; memória de longo prazo só existe no Postgres, sem nenhuma exceção",
+      "Não existe diferença prática — os dois termos descrevem exatamente o mesmo mecanismo de armazenamento",
+    ],
+    correct: 1,
+  },
+  {
+    q: "Como o agente extrai preferências do cliente (nome, idade, gêneros, bandas) neste projeto?",
+    options: [
+      "Exibindo um formulário estruturado antes de iniciar qualquer conversa com o cliente",
+      "Perguntando explicitamente, em uma pergunta fixa no início de cada thread nova, cada campo de preferência",
+      "Via output estruturado: a cada mensagem, um schema pede ao modelo que extraia preferências, se houver alguma",
+      "Rodando uma expressão regular sobre a mensagem do cliente, procurando nomes de bandas conhecidas",
+    ],
+    correct: 2,
+  },
+  {
+    q: "Qual é a diferença de papel entre checkpointer e store no LangGraph, como usados em memoryService.ts?",
+    options: [
+      "checkpointer guarda o estado do grafo por thread; store existe para dados que sobrevivem entre threads diferentes",
+      "checkpointer só funciona com SQLite; store só funciona com Postgres, por limitação da própria biblioteca",
+      "store é apenas um cache de leitura; checkpointer é quem efetivamente grava qualquer dado no banco",
+      "Não há diferença de propósito — são dois nomes para a mesma classe, mantidos por compatibilidade com versões antigas",
+    ],
+    correct: 0,
+  },
+  {
+    q: "Por que o projeto usa Postgres para o histórico de mensagens e SQLite para as preferências, em vez de um banco só?",
+    options: [
+      "Porque o LangGraph exige, por padrão, que checkpointer e preferências fiquem sempre em bancos diferentes",
+      "Para mostrar as opções disponíveis: histórico usa os mecanismos nativos do LangGraph (Postgres); preferências são um dado simples e pequeno, guardado à parte",
+      "Porque o SQLite não suporta nenhum tipo de dado além de texto, então o histórico não poderia ser guardado nele de forma alguma",
+      "Porque o Postgres é gratuito e o SQLite é pago acima de um certo volume de dados armazenados",
+    ],
+    correct: 1,
+  },
+  {
+    q: "O que é um \"checkpoint\" no LangGraph, e que problema ele resolve?",
+    options: [
+      "Um log de erros da aplicação, usado só para depuração durante o desenvolvimento",
+      "Um snapshot do estado do grafo salvo por thread, que permite retomar uma conversa exatamente de onde parou",
+      "Um mecanismo de cache de respostas do modelo, para economizar chamadas repetidas com o mesmo prompt",
+      "Um arquivo de configuração que define quais nodes existem no grafo antes de ele ser compilado",
+    ],
+    correct: 1,
+  },
+  {
+    q: "Por que o resumo de histórico (summarizeNode) é descrito como \"incremental\"?",
+    options: [
+      "Porque ele aumenta o limite de mensagens automaticamente a cada vez que é executado",
+      "Porque cada resumo novo incorpora o resumo anterior (se existir) junto com as mensagens novas, em vez de recomeçar do zero",
+      "Porque ele soma o número de tokens gastos em cada chamada e guarda esse total acumulado",
+      "Porque ele só roda uma única vez durante toda a vida útil da aplicação, nunca mais que isso",
+    ],
+    correct: 1,
+  },
+  {
+    q: "Para que serve o tipo especial RemoveMessage, usado dentro de summarizeNode?",
+    options: [
+      "Serve só para registrar, em log, quais mensagens deveriam ter sido removidas, sem removê-las de fato do estado",
+      "Formata a mensagem removida como markdown antes de exibi-la de volta ao cliente na tela do terminal",
+      "Quando incluído no retorno de um node, instrui o reducer de mensagens a remover aquela mensagem específica do estado acumulado",
+      "Cancela, no Postgres, o checkpoint mais recente salvo para aquela thread específica da conversa",
+    ],
+    correct: 2,
+  },
+  {
+    q: "Por que messages, em graph.ts, precisa de .langgraph.reducer(messagesStateReducer, ...) para que RemoveMessage funcione de verdade?",
+    options: [
+      "Porque sem um reducer que saiba interpretar RemoveMessage, o retorno parcial de um node simplesmente substituiria o array inteiro, sem remover nada de fato",
+      "Porque RemoveMessage só existe como conceito teórico e nunca teve implementação real dentro do LangGraph",
+      "Porque o Zod exige, por padrão, que todo array declarado num schema tenha algum reducer configurado",
+      "Porque isso é só uma formalidade sem efeito prático nenhum sobre o comportamento em tempo de execução",
+    ],
+    correct: 0,
+  },
+  {
+    q: "O que chatNode faz de diferente quando state.userContext já está preenchido, em vez de vazio?",
+    options: [
+      "Ignora completamente as preferências salvas e trata o cliente como se fosse completamente desconhecido",
+      "Deleta as preferências salvas no SQLite, para forçar uma nova extração já na próxima mensagem",
+      "Evita consultar preferencesService.getBasicInfo de novo, reaproveitando o valor já carregado anteriormente na mesma conversa",
+      "Interrompe a conversa, pedindo ao cliente para confirmar manualmente se as preferências salvas ainda estão corretas",
+    ],
+    correct: 2,
+  },
+  {
+    q: "Por que existem duas funções de roteamento (routeAfterChat e routeAfterSavePreferences) neste grafo, em vez de uma só?",
+    options: [
+      "Porque o LangGraph proíbe, por regra da própria biblioteca, que um node tenha mais de uma aresta de saída",
+      "Porque, depois de chatNode, podem existir até dois efeitos colaterais pendentes (salvar preferências e resumir), não só um",
+      "Porque cada função de roteamento só pode verificar exatamente um campo do estado do grafo, nunca mais que isso",
+      "É só uma escolha de estilo, sem nenhuma diferença real de comportamento entre usar uma função ou duas",
+    ],
+    correct: 1,
+  },
+  {
+    q: "O que PreferencesService.mergePreferences faz de diferente de um simples UPDATE que sobrescreve a linha inteira?",
+    options: [
+      "Nada — mergePreferences é equivalente a um UPDATE comum, sem nenhuma lógica adicional",
+      "Mescla o dado novo com o que já existia, preservando campos antigos que não foram mencionados na mensagem atual",
+      "Apaga a linha inteira do usuário e cria uma nova só com os dados mencionados na mensagem mais recente",
+      "Só funciona na primeira vez que um usuário é salvo; chamadas seguintes para o mesmo userId sempre falham",
+    ],
+    correct: 1,
+  },
+  {
+    q: "Por que genres e bands são guardados como texto (JSON serializado) nas colunas do SQLite, em vez de como array nativo?",
+    options: [
+      "Porque arrays ocupam mais espaço em disco no SQLite do que qualquer outro tipo de dado suportado",
+      "Porque o SQLite não tem um tipo de coluna array nativo — o PreferencesService serializa e desserializa manualmente",
+      "Porque o knex não sabe lidar com nenhum tipo de dado além de string e number em suas migrações",
+      "Porque isso é uma exigência do LangGraph, que só aceita strings simples como valor de estado",
+    ],
+    correct: 1,
+  },
+  {
+    q: "Neste projeto, buildGraph devolve um StateGraph ainda não compilado — quem chama .compile()?",
+    options: [
+      "Ninguém — o grafo roda sem nunca ser compilado, direto a partir do StateGraph bruto",
+      "Só o LangGraph Studio compila o grafo; a linha de comando (cli.ts) não compila nada",
+      "factory.ts compila passando checkpointer/store; o teste do fluxo do grafo compila sem argumentos, quando não precisa de memória persistente",
+      "A compilação acontece automaticamente dentro do construtor de GraphStateSchema, sem código explícito",
+    ],
+    correct: 2,
+  },
+  {
+    q: "Por que chatNode faz state.messages.length + 1 > maxMessagesToSummarize (com o +1), em vez de comparar sem esse ajuste?",
+    options: [
+      "Porque +1 corrige um bug conhecido e não documentado da própria biblioteca LangGraph",
+      "Porque a mensagem do assistente que acabou de ser gerada ainda não está refletida em state.messages neste ponto do código",
+      "Porque o valor de maxMessagesToSummarize já vem, por padrão, um número a menos do que deveria",
+      "Porque cada mensagem do cliente conta em dobro para efeito de cálculo do limite de resumo",
+    ],
+    correct: 1,
+  },
+  {
+    q: "O que aconteceria, na prática, se maxMessagesToSummarize fosse aumentado de 6 para um valor bem mais alto (ex: 200) em produção?",
+    options: [
+      "O resumo passaria a rodar a cada mensagem, tornando a aplicação mais lenta do que está hoje",
+      "O histórico cresceria mais antes de ser resumido, gastando mais tokens por chamada até o resumo acontecer, mas resumindo com menos frequência",
+      "O checkpointer do Postgres pararia de funcionar acima desse novo limite configurado",
+      "As preferências salvas no SQLite seriam apagadas automaticamente ao atingir esse novo valor",
+    ],
+    correct: 1,
+  },
+];
+
+function renderQuiz() {
+  const container = document.getElementById("content");
+  container.innerHTML = "";
+
+  const intro = document.createElement("p");
+  intro.className = "quiz-intro";
+  intro.textContent =
+    "Responda as " + QUIZ_DATA.length + " perguntas — a correção aparece assim que você marca uma alternativa.";
+  container.appendChild(intro);
+
+  const scoreBar = document.createElement("div");
+  scoreBar.className = "quiz-score-bar";
+  const scoreEl = document.createElement("div");
+  scoreEl.className = "quiz-score";
+  scoreEl.id = "quiz-score";
+  scoreBar.appendChild(scoreEl);
+  container.appendChild(scoreBar);
+
+  const wrap = document.createElement("div");
+  wrap.className = "quiz-wrap";
+
+  function updateScore() {
+    let correctCount = 0;
+    let answeredCount = 0;
+    QUIZ_DATA.forEach((item, qIdx) => {
+      const selected = wrap.querySelector('input[name="quiz-q' + qIdx + '"]:checked');
+      if (!selected) return;
+      answeredCount++;
+      if (Number(selected.value) === item.correct) correctCount++;
+    });
+    scoreEl.textContent =
+      "Nota atual: " + correctCount + " de " + QUIZ_DATA.length + " corretas" +
+      (answeredCount < QUIZ_DATA.length ? " (" + answeredCount + "/" + QUIZ_DATA.length + " respondidas)" : "") +
+      ".";
+  }
+
+  QUIZ_DATA.forEach((item, qIdx) => {
+    const qEl = document.createElement("div");
+    qEl.className = "quiz-question";
+
+    const qText = document.createElement("div");
+    qText.className = "quiz-q-text";
+    qText.textContent = qIdx + 1 + ". " + item.q;
+    qEl.appendChild(qText);
+
+    const optsEl = document.createElement("div");
+    optsEl.className = "quiz-options";
+
+    const feedback = document.createElement("div");
+    feedback.className = "quiz-feedback";
+    feedback.id = "quiz-feedback-" + qIdx;
+
+    item.options.forEach((opt, oIdx) => {
+      const label = document.createElement("label");
+      label.className = "quiz-option";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = "quiz-q" + qIdx;
+      input.value = String(oIdx);
+      const span = document.createElement("span");
+      span.textContent = String.fromCharCode(97 + oIdx) + ") " + opt;
+      label.appendChild(input);
+      label.appendChild(span);
+      optsEl.appendChild(label);
+
+      input.addEventListener("change", () => {
+        optsEl.querySelectorAll(".quiz-option").forEach((optionLabel) => {
+          optionLabel.classList.remove("is-correct", "is-wrong");
+        });
+        optsEl.querySelectorAll("input").forEach((otherInput) => {
+          if (Number(otherInput.value) === item.correct) {
+            otherInput.closest(".quiz-option").classList.add("is-correct");
+          }
+        });
+
+        if (oIdx === item.correct) {
+          feedback.textContent = "Certo!";
+          feedback.className = "quiz-feedback is-correct-text";
+        } else {
+          label.classList.add("is-wrong");
+          feedback.textContent =
+            "Errado — a resposta certa é a " + String.fromCharCode(97 + item.correct) + ").";
+          feedback.className = "quiz-feedback is-wrong-text";
+        }
+        updateScore();
+      });
+    });
+
+    qEl.appendChild(optsEl);
+    qEl.appendChild(feedback);
+    wrap.appendChild(qEl);
+  });
+
+  updateScore();
+  container.appendChild(wrap);
+}
+
+const PROGRESS_KEY = "modulo04-recomendador-progress";
+function loadProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function saveProgress(p) {
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+}
+let progress = loadProgress();
+
+const FLAT_ORDER = LESSONS.map((l) => l.id);
+let currentId = FLAT_ORDER[0];
+let lastTipoPerAula = {};
+
+function renderRoute() {
+  const routeEl = document.getElementById("route");
+  routeEl.innerHTML = "";
+  STATIONS.forEach((station, idx) => {
+    const total = station.docs.length;
+    const doneCount = station.docs.filter((d) => progress[d.id]).length;
+    const visited = doneCount === total;
+    const partial = doneCount > 0 && doneCount < total;
+
+    const wrap = document.createElement("div");
+    wrap.className = "relative flex gap-3.5 py-0.5 pl-1";
+
+    if (idx < STATIONS.length - 1) {
+      const lineEl = document.createElement("div");
+      lineEl.className =
+        "absolute left-[15px] top-[26px] bottom-[-3px] w-0.5 " +
+        (visited ? "bg-[var(--accent-route)]" : "bg-[var(--line)]");
+      wrap.appendChild(lineEl);
+    }
+
+    const dot = document.createElement("div");
+    dot.className =
+      "flex-none w-6 h-6 rounded-full border-2 grid place-items-center font-mono text-[0.65rem] z-10 transition-colors " +
+      (visited
+        ? "border-[var(--accent-route)] bg-[var(--accent-route)] text-[var(--bg)]"
+        : partial
+        ? "border-[var(--accent-route)] text-[var(--ink-faint)] bg-[conic-gradient(var(--accent-route)_0_50%,transparent_50%_100%)]"
+        : "border-[var(--line)] bg-[var(--bg)] text-[var(--ink-faint)]");
+    dot.textContent = DOT_LABEL[station.docs[0].tipo];
+    wrap.appendChild(dot);
+
+    const btn = document.createElement("button");
+    const activeDoc = station.docs.find((d) => d.id === currentId);
+    btn.className =
+      "flex-1 text-left px-2 pt-1 pb-3 rounded-lg transition-colors " +
+      (activeDoc ? "text-[var(--ink)]" : "text-[var(--ink-soft)] hover:text-[var(--ink)]");
+    const first = station.docs[0];
+    btn.innerHTML =
+      '<div class="font-mono text-[0.62rem] tracking-[0.08em] uppercase text-[var(--ink-faint)]">' +
+      STATION_EYEBROW[first.tipo] +
+      '</div><div class="text-[0.88rem] leading-snug mt-0.5' +
+      (activeDoc ? " font-semibold" : "") +
+      '">' +
+      escapeHtml(first.label) +
+      "</div>";
+    btn.addEventListener("click", () => {
+      const aulaState = lastTipoPerAula[station.aula];
+      const target = station.docs.find((d) => d.tipo === aulaState) || first;
+      navigateTo(target.id);
+    });
+    wrap.appendChild(btn);
+    routeEl.appendChild(wrap);
+  });
+}
+
+const TIPO_COLORS = {
+  artigo: "bg-[var(--accent-artigo-soft)] text-[var(--accent-artigo)]",
+  tutorial: "bg-[var(--accent-tutorial-soft)] text-[var(--accent-tutorial)]",
+  anotacao: "bg-[var(--accent-route-soft)] text-[var(--accent-route)]",
+  quiz: "bg-[var(--accent-quiz-soft)] text-[var(--accent-quiz)]",
+};
+
+function renderTypeToggle(doc) {
+  const wrap = document.getElementById("typeToggleWrap");
+  const siblings = LESSONS.filter((l) => l.aula === doc.aula);
+  if (siblings.length < 2) {
+    wrap.innerHTML = "";
+    return;
+  }
+  const toggle = document.createElement("div");
+  toggle.className = "inline-flex gap-1.5 p-1 rounded-full mb-7 bg-[var(--bg-elevated)]";
+  siblings.forEach((s) => {
+    const btn = document.createElement("button");
+    const active = s.id === doc.id;
+    btn.className =
+      "px-4 py-1.5 rounded-full text-[0.82rem] font-semibold transition-colors " +
+      (active ? TIPO_COLORS[s.tipo] : "text-[var(--ink-soft)]");
+    btn.textContent = s.tipo === "artigo" ? "Conceito" : "Mão na massa";
+    btn.addEventListener("click", () => navigateTo(s.id));
+    toggle.appendChild(btn);
+  });
+  wrap.innerHTML = "";
+  wrap.appendChild(toggle);
+}
+
+function renderLesson(id) {
+  const doc = LESSONS.find((l) => l.id === id);
+  if (!doc) return;
+  currentId = id;
+  lastTipoPerAula[doc.aula] = doc.tipo;
+
+  document.getElementById("lessonEyebrow").textContent =
+    STATION_EYEBROW[doc.tipo] + " · " + TIPO_LABEL[doc.tipo];
+  document.getElementById("lessonTitle").textContent = doc.title;
+
+  const tagEl = document.getElementById("docTag");
+  tagEl.className =
+    "inline-block font-mono text-[0.68rem] tracking-[0.06em] uppercase px-2 py-0.5 rounded-md mb-5 " +
+    TIPO_COLORS[doc.tipo];
+  tagEl.textContent = TIPO_TAG[doc.tipo];
+
+  renderTypeToggle(doc);
+
+  if (doc.tipo === "quiz") {
+    renderQuiz();
+  } else {
+    const raw = document.getElementById("doc-" + id).textContent;
+    document.getElementById("content").innerHTML = parseMarkdown(raw);
+  }
+
+  const markDone = document.getElementById("markDone");
+  markDone.checked = !!progress[id];
+  document.getElementById("markDoneLabel").textContent = progress[id]
+    ? "Concluído"
+    : "Marcar como concluído";
+
+  const idx = FLAT_ORDER.indexOf(id);
+  document.getElementById("prevBtn").disabled = idx <= 0;
+  document.getElementById("nextBtn").disabled = idx >= FLAT_ORDER.length - 1;
+
+  renderRoute();
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+}
+
+function navigateTo(id) {
+  renderLesson(id);
+}
+
+document.getElementById("markDone").addEventListener("change", (e) => {
+  progress[currentId] = e.target.checked;
+  saveProgress(progress);
+  renderLesson(currentId);
+});
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+  const idx = FLAT_ORDER.indexOf(currentId);
+  if (idx > 0) navigateTo(FLAT_ORDER[idx - 1]);
+});
+document.getElementById("nextBtn").addEventListener("click", () => {
+  const idx = FLAT_ORDER.indexOf(currentId);
+  if (idx < FLAT_ORDER.length - 1) navigateTo(FLAT_ORDER[idx + 1]);
+});
+
+document.getElementById("content").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-nav]");
+  if (btn) navigateTo(btn.dataset.nav);
+});
+
+renderLesson(currentId);
+</script>
+</body>
+</html>

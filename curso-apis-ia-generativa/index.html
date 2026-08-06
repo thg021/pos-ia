@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Materiais interativos — Curso APIs de IA Generativa</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5f6368;
+    --card-bg: #f7f7f8;
+    --card-border: #e2e2e4;
+    --accent: #6d4aff;
+    --accent-fg: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15151a;
+      --fg: #f0f0f2;
+      --muted: #a0a0a8;
+      --card-bg: #1f1f26;
+      --card-border: #2e2e38;
+      --accent: #9b82ff;
+      --accent-fg: #15151a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+  }
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin-bottom: 0.25rem;
+  }
+  p.subtitle {
+    color: var(--muted);
+    margin-top: 0;
+    margin-bottom: 2.5rem;
+  }
+  .grid {
+    display: grid;
+    gap: 1rem;
+  }
+  a.card {
+    display: block;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  a.card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .card .modulo {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent-fg);
+    background: var(--accent);
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    margin-bottom: 0.6rem;
+  }
+  .card .titulo {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  .card .desc {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  footer {
+    margin-top: 2.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Materiais interativos</h1>
+  <p class="subtitle">Curso APIs de IA Generativa e Prompt Engineering — navegue pelos módulos com material interativo.</p>
+
+  <div class="grid" style="margin-bottom:2.5rem">
+    <a class="card" href="questionario-geral.html">
+      <span class="modulo" style="background:#2f8f82">Estudo</span>
+      <div class="titulo">Questionário geral (50 perguntas)</div>
+      <div class="desc">Múltipla escolha, níveis fácil/médio/difícil, cobrindo os 7 módulos. Progresso salvo no navegador, com exportar/importar JSON.</div>
+    </a>
+
+    <a class="card" href="glossario-tecnico.md">
+      <span class="modulo" style="background:#2f8f82">Estudo</span>
+      <div class="titulo">Glossário técnico</div>
+      <div class="desc">Todos os termos técnicos do curso, em ordem alfabética, com o módulo onde cada um aparece.</div>
+    </a>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="modulo02/material-interativo.html">
+      <span class="modulo">Módulo 02</span>
+      <div class="titulo">Grafo LangGraph, aula a aula</div>
+      <div class="desc">Estado, nodes, pipeline condicional e fallback construídos passo a passo.</div>
+    </a>
+
+    <a class="card" href="modulo03/material-interativo.html">
+      <span class="modulo">Módulo 03</span>
+      <div class="titulo">Agente de agendamento e cancelamento</div>
+      <div class="desc">JSON estruturado, agentes e interpretação de intenção.</div>
+    </a>
+
+    <a class="card" href="modulo04/material-interativo.html">
+      <span class="modulo">Módulo 04</span>
+      <div class="titulo">Recomendador de música com memória</div>
+      <div class="desc">Memória, preferências e resumo de histórico.</div>
+    </a>
+
+    <a class="card" href="modulo05/material-interativo.html">
+      <span class="modulo">Módulo 05</span>
+      <div class="titulo">Guardrails contra prompt injection com MCP</div>
+      <div class="desc">Segurança de prompts: ataque via MCP filesystem e defesa com guardrails.</div>
+    </a>
+
+    <a class="card" href="modulo06/material-interativo.html">
+      <span class="modulo">Módulo 06</span>
+      <div class="titulo">Agente de relatórios com Neo4j</div>
+      <div class="desc">Text-to-Cypher com multi-step reasoning e auto-correção de queries.</div>
+    </a>
+
+    <a class="card" href="modulo07/material-interativo.html">
+      <span class="modulo">Módulo 07</span>
+      <div class="titulo">Multimodalidade e observabilidade</div>
+      <div class="desc">Entrada multimodal (imagem, áudio, realtime) e observabilidade em produção.</div>
+    </a>
+  </div>
+
+  <footer>Gerado a partir dos módulos em <code>docs/curso-apis-ia-generativa/</code>.</footer>
+</main>
+</body>
+</html>

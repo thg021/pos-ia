@@ -1,0 +1,12 @@
+{
+  "eric": {
+    "name": "Eric Wendel",
+    "role": "admin",
+    "permissions": ["read_files", "execute_commands"]
+  },
+  "ana": {
+    "name": "Ana Neri",
+    "role": "member",
+    "permissions": []
+  }
+}

@@ -1,0 +1,1106 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Módulo 6 — Agente de relatórios com Neo4j</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Charter', 'Georgia', '"Iowan Old Style"', '"Times New Roman"', 'serif'],
+          sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+          mono: ['ui-monospace', '"SF Mono"', '"Cascadia Code"', '"Roboto Mono"', 'Consolas', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+:root {
+  --bg: #eef1ef;
+  --bg-elevated: #e2e8e2;
+  --ink: #171b18;
+  --ink-soft: #4a534c;
+  --ink-faint: #6f786f;
+  --line: #c7d0c7;
+  --accent-route: #b8862e;
+  --accent-route-soft: #b8862e33;
+  --accent-tutorial: #2f8f82;
+  --accent-tutorial-soft: #2f8f8222;
+  --accent-artigo: #7c6bb0;
+  --accent-artigo-soft: #7c6bb022;
+  /* Bloco de código: paleta fixa do tema Dracula (dracula-theme.com), independente
+     do tema claro/escuro da página em volta — código sempre lido sobre fundo escuro. */
+  --code-bg: #282a36;
+  --code-fg: #f8f8f2;
+  --code-line: #44475a;
+  --code-comment: #6272a4;
+  --code-string: #f1fa8c;
+  --code-keyword: #ff79c6;
+  --code-func: #50fa7b;
+  --code-number: #bd93f9;
+  --code-type: #8be9fd;
+  --font-display: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151a;
+    --bg-elevated: #191d22;
+    --ink: #e7ebe8;
+    --ink-soft: #aab3ac;
+    --ink-faint: #7c877e;
+    --line: #2b3230;
+    --accent-route: #e0ac4a;
+    --accent-route-soft: #e0ac4a2b;
+    --accent-tutorial: #4fb3a9;
+    --accent-tutorial-soft: #4fb3a92b;
+    --accent-artigo: #9a8cd6;
+    --accent-artigo-soft: #9a8cd62b;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151a;
+  --bg-elevated: #191d22;
+  --ink: #e7ebe8;
+  --ink-soft: #aab3ac;
+  --ink-faint: #7c877e;
+  --line: #2b3230;
+  --accent-route: #e0ac4a;
+  --accent-route-soft: #e0ac4a2b;
+  --accent-tutorial: #4fb3a9;
+  --accent-tutorial-soft: #4fb3a92b;
+  --accent-artigo: #9a8cd6;
+  --accent-artigo-soft: #9a8cd62b;
+}
+:root[data-theme="light"] {
+  --bg: #eef1ef;
+  --bg-elevated: #e2e8e2;
+  --ink: #171b18;
+  --ink-soft: #4a534c;
+  --ink-faint: #6f786f;
+  --line: #c7d0c7;
+  --accent-route: #b8862e;
+  --accent-route-soft: #b8862e33;
+  --accent-tutorial: #2f8f82;
+  --accent-tutorial-soft: #2f8f8222;
+  --accent-artigo: #7c6bb0;
+  --accent-artigo-soft: #7c6bb022;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--accent-route-soft); }
+
+a, button { font-family: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent-route); outline-offset: 2px; }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-route) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--accent-route) 50%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-route);
+}
+*::-webkit-scrollbar-corner { background: transparent; }
+
+.content h1, .content h2, .content h3, .content h4 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+  margin: 1.6em 0 0.5em;
+}
+.content h1 { display: none; }
+.content h2 { font-size: 1.35rem; border-top: 1px solid var(--line); padding-top: 0.9em; }
+.content h3 { font-size: 1.1rem; color: var(--ink); }
+.content h4 { font-size: 1rem; color: var(--ink-soft); }
+.content p { margin: 0 0 1.1em; color: var(--ink); }
+.content strong { color: var(--ink); }
+.content em { color: var(--ink-soft); }
+.content code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--bg-elevated);
+  padding: 0.12em 0.4em;
+  border-radius: 5px;
+}
+.content ul, .content ol { padding-left: 1.3em; margin: 0 0 1.2em; }
+.content li { margin: 0.35em 0; }
+.content li > ul, .content li > ol { margin-top: 0.35em; }
+.content blockquote {
+  border-left: 3px solid var(--accent-route);
+  margin: 0 0 1.2em;
+  padding: 0.2em 0 0.2em 1em;
+  color: var(--ink-soft);
+}
+.content blockquote p { margin-bottom: 0.6em; }
+.content hr { border: none; border-top: 1px solid var(--line); margin: 2em 0; }
+
+.code-card {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 10px;
+  margin: 0 0 1.4em;
+  overflow: hidden;
+  border: 1px solid var(--code-line);
+}
+.code-lang {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #93a099;
+  padding: 8px 14px 0;
+}
+.code-card pre {
+  margin: 0;
+  padding: 10px 14px 16px;
+  overflow-x: auto;
+}
+.code-card code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  background: none;
+  padding: 0;
+  color: inherit;
+  white-space: pre;
+}
+.tok-comment { color: var(--code-comment); font-style: italic; }
+.tok-string { color: var(--code-string); }
+.tok-keyword { color: var(--code-keyword); }
+.tok-func { color: var(--code-func); }
+.tok-number { color: var(--code-number); }
+.tok-type { color: var(--code-type); }
+
+.table-wrap { overflow-x: auto; margin: 0 0 1.4em; }
+.content table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+.content th, .content td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.content th {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  background: var(--bg-elevated);
+}
+
+.inline-link {
+  color: var(--accent-tutorial);
+  border-bottom: 1px solid var(--accent-tutorial-soft);
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding: 0;
+  font: inherit;
+}
+.inline-link:hover { border-bottom-color: var(--accent-tutorial); }
+</style>
+</head>
+<body class="font-sans">
+<div class="flex flex-col md:flex-row w-full min-h-screen" style="background:var(--bg);color:var(--ink)">
+  <aside class="w-full md:w-[300px] md:shrink-0 border-b md:border-b-0 md:border-r border-[var(--line)] px-5 py-7 md:sticky md:top-0 md:h-screen overflow-y-auto flex flex-col gap-6">
+    <a href="../index.html" class="inline-flex items-center gap-1 text-[0.78rem] font-medium" style="color:var(--ink-faint)">&larr; Início</a>
+    <div>
+      <div class="font-mono text-[0.68rem] tracking-[0.12em] uppercase" style="color:var(--accent-route)">Módulo 6 · APIs de IA Generativa</div>
+      <h1 class="font-display text-[1.35rem] leading-tight mt-1 text-balance">Agente de relatórios com Neo4j</h1>
+      <p class="text-[0.85rem] mt-1.5" style="color:var(--ink-soft)">Text-to-Cypher com multi-step reasoning e auto-correção: perguntas de negócio em linguagem natural viram queries de grafo, sem dashboard fixo. Clique numa estação para ler.</p>
+    </div>
+    <nav class="relative flex flex-col" id="route"></nav>
+    <div class="mt-auto pt-4 border-t text-[0.78rem]" style="border-color:var(--line);color:var(--ink-faint)">
+      Progresso salvo neste navegador. Tutorial completo em
+      <code class="font-mono text-[0.92em] px-1 py-0.5 rounded" style="background:var(--bg-elevated)">docs/curso-apis-ia-generativa/modulo06/</code>.
+    </div>
+  </aside>
+  <main class="flex-1 min-w-0 w-full px-6 md:px-10 lg:px-16 py-12 pb-24">
+    <div class="flex flex-wrap items-baseline gap-3 mb-1">
+      <span class="font-mono text-[0.72rem] tracking-[0.1em] uppercase" style="color:var(--accent-route)" id="lessonEyebrow"></span>
+    </div>
+    <h2 class="font-display text-[clamp(1.6rem,3vw,2.15rem)] leading-tight mt-1.5 mb-4 text-balance" id="lessonTitle"></h2>
+    <div id="typeToggleWrap"></div>
+    <span id="docTag"></span>
+    <article class="content w-full" id="content"></article>
+    <div class="mt-10 pt-5 border-t flex justify-between items-center gap-4 flex-wrap" style="border-color:var(--line)">
+      <label class="flex items-center gap-2 text-[0.88rem]" style="color:var(--ink-soft)">
+        <input type="checkbox" id="markDone" class="w-4 h-4" style="accent-color:var(--accent-route)" />
+        <span id="markDoneLabel">Marcar como concluído</span>
+      </label>
+      <div class="flex gap-2.5">
+        <button id="prevBtn" type="button" class="text-[0.82rem] px-3.5 py-2 border border-[var(--line)] text-[var(--ink-soft)] rounded-lg transition-colors hover:border-[var(--accent-route)] hover:text-[var(--ink)] disabled:opacity-35 disabled:pointer-events-none">&larr; Anterior</button>
+        <button id="nextBtn" type="button" class="text-[0.82rem] px-3.5 py-2 border border-[var(--line)] text-[var(--ink-soft)] rounded-lg transition-colors hover:border-[var(--accent-route)] hover:text-[var(--ink)] disabled:opacity-35 disabled:pointer-events-none">Próxima &rarr;</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="text/plain" id="doc-01-artigo">
+# De pergunta em linguagem natural a query de grafo: multi-step reasoning
+
+> Este artigo cobre as 5 aulas do módulo (template/arquitetura, query planner, cypher generator, cypher executor, correção e resposta analítica) — o projeto mais complexo do curso até aqui, construído de forma contínua ao longo das aulas.
+
+## O problema: perguntas de negócio viram relatórios, sem dashboard fixo
+
+O cenário do módulo é um sistema de vendas de cursos onde o cliente pode perguntar, em linguagem natural, coisas como "qual curso teve mais reembolsos?" ou "quais cursos costumam ser comprados juntos?". Em vez de construir dashboards fixos para cada pergunta possível, o agente **gera a query de banco de dados na hora**, a partir da pergunta — e qualquer pergunta nova, mesmo que ninguém tenha pensado nela antes, pode (em teoria) ser respondida sem escrever uma linha de código nova.
+
+## Por que Neo4j (um banco de dados de grafos)
+
+O módulo escolhe **Neo4j**, um banco orientado a grafos, em vez de um banco relacional (Postgres/MySQL) — não porque seja obrigatório para esse padrão (o mesmo texto → query também funciona com SQL), mas porque grafos tornam **relações entre dados** muito mais naturais de consultar e de visualizar: "quem comprou X também tende a comprar Y", "qual é o padrão de progresso de alunos com perfil parecido". A linguagem de consulta do Neo4j é o **Cypher**.
+
+## O padrão central: text-to-query com validação e correção
+
+A técnica é uma extensão do que já foi visto no módulo 3 (output estruturado): a pergunta do cliente vira, via LLM, uma **query gerada dinamicamente** — só que agora com uma camada extra de resiliência, porque gerar uma query sintaticamente válida é mais difícil para o modelo do que extrair alguns campos de um formulário. O fluxo lida com três desafios que não existiam nos módulos anteriores:
+
+1. **A query pode ter erro de sintaxe** — precisa de um mecanismo de correção automática.
+2. **A pergunta pode ser complexa demais para uma única query** — precisa ser decomposta em passos menores.
+3. **O resultado bruto do banco de dados não é uma resposta apresentável** — precisa ser traduzido de volta para linguagem natural.
+
+## Decomposição: quebrar perguntas complexas em sub-perguntas
+
+O primeiro nó do fluxo (**query planner**) decide se a pergunta pode ser respondida com uma única query ("liste todos os cursos" — um único domínio de dados) ou se precisa ser **decomposta** em várias sub-perguntas menores ("compare o faturamento entre os cursos com mais e menos conclusão" — isso exige calcular médias, cruzar dados de vendas com dados de progresso, etc.). Quando decomposta, cada sub-pergunta vira, em sequência, uma nova chamada ao gerador de query — como se fosse um mini-pipeline dentro do pipeline principal.
+
+Esse padrão de "pensar antes de agir, quebrando um problema grande em passos menores" é reaproveitável muito além de bancos de dados — o mesmo raciocínio se aplica a qualquer tarefa complexa demais para ser resolvida "de uma vez" por um modelo de LLM (edição de vídeo automatizada, geração de conteúdo em múltiplas etapas, etc.).
+
+## Auto-correção: tratar a IA como algo que erra e se recupera
+
+O segundo pilar do módulo é a **auto-correção**: se a query gerada falhar (erro de sintaxe, referência inválida), o sistema não desiste nem repassa o erro cru para o cliente — ele envia a query com erro de volta para outro nó de LLM, junto com a mensagem de erro e o schema do banco, pedindo para corrigir. Isso se repete até um número máximo de tentativas configurável, e só depois disso o sistema desiste e informa o cliente que não conseguiu.
+
+Esse padrão espelha como ferramentas de IA para código já funcionam no dia a dia: tentar executar algo, ver que falhou, tentar de novo com o contexto do erro, em vez de parar na primeira falha.
+
+## Limite de recursão como proteção contra loop infinito
+
+Como o fluxo é literalmente um grafo com ciclos (planejador → gerador → executor → de volta ao gerador, se precisar de mais passos ou de correção), existe um risco real de loop infinito — por exemplo, se a condição de parada (quantidade de sub-perguntas já respondidas, ou tentativas de correção já esgotadas) não for calculada corretamente. O LangGraph tem uma proteção nativa (um limite de recursão padrão) que interrompe a execução e sinaliza erro em vez de rodar para sempre — uma rede de segurança, não uma substituição para desenhar corretamente as condições de parada.
+
+## A etapa final: transformar dado bruto em resposta legível
+
+Depois que todas as sub-perguntas foram respondidas (ou a pergunta simples foi resolvida em uma única query), um último nó recebe **todos os resultados acumulados** (a pergunta original, cada sub-pergunta, cada query executada, cada resultado) e gera um relatório em linguagem natural — a mesma ideia de "JSON → linguagem natural" que já apareceu nos módulos 3 e 4, agora aplicada a um conjunto de dados agregado ao longo de múltiplos passos, em vez de uma única resposta.
+
+## Verifique seu entendimento
+
+1. Por que o módulo usa um banco de dados de grafos em vez de um banco relacional para esse tipo de aplicação?
+2. O que diferencia uma pergunta "simples" de uma "complexa" no critério usado pelo query planner?
+3. Como funciona o mecanismo de auto-correção quando uma query gerada tem erro de sintaxe?
+4. Por que existe um limite máximo de tentativas de correção, em vez de tentar indefinidamente até dar certo?
+5. Por que o resultado bruto do banco de dados não pode simplesmente ser devolvido ao cliente final?
+</script>
+
+<script type="text/plain" id="doc-01-tutorial">
+# Tutorial: agente de relatórios com Neo4j, multi-step e auto-correção
+
+Este tutorial constrói um agente que responde perguntas de negócio em linguagem natural, gerando e executando queries Cypher contra um banco Neo4j, com decomposição de perguntas complexas e auto-correção de queries inválidas.
+
+## Passo 0 — Infraestrutura
+
+```bash
+docker compose up -d   # sobe o Neo4j local
+npm install neo4j-driver
+```
+
+## Passo 1 — Estado do grafo
+
+```typescript
+// src/graph/graph.ts
+import { z } from "zod";
+
+const GraphStateSchema = z.object({
+  messages: z.custom<BaseMessage[]>().default(() => []),
+  question: z.string().optional(),
+  isMultiStep: z.boolean().default(false),
+  subQuestions: z.array(z.string()).default([]),
+  currentStep: z.number().optional(),
+  query: z.string().optional(),
+  originalQuery: z.string().optional(),
+  subQueries: z.array(z.string()).default([]),
+  subResults: z.array(z.unknown()).default([]),
+  dbResults: z.unknown().optional(),
+  needsCorrection: z.boolean().default(false),
+  validationError: z.string().optional(),
+  correctionAttempts: z.number().default(0),
+  error: z.string().optional(),
+  answer: z.string().optional(),
+  followUpQuestions: z.array(z.string()).default([]),
+});
+
+export type GraphState = z.infer<typeof GraphStateSchema>;
+```
+
+## Passo 2 — O serviço Neo4j
+
+```typescript
+// src/services/neo4jService.ts
+import neo4j, { type Driver } from "neo4j-driver";
+
+export class Neo4jService {
+  private driver: Driver;
+
+  constructor(uri: string, user: string, password: string) {
+    this.driver = neo4j.driver(uri, neo4j.auth.basic(user, password));
+  }
+
+  async getSchema(): Promise<string> {
+    const session = this.driver.session();
+    try {
+      const result = await session.run("CALL db.schema.visualization()");
+      return JSON.stringify(result.records);
+    } finally {
+      await session.close();
+    }
+  }
+
+  async validateQuery(query: string): Promise<boolean> {
+    const session = this.driver.session();
+    try {
+      await session.run(`EXPLAIN ${query}`);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      await session.close();
+    }
+  }
+
+  async query(cypherQuery: string): Promise<unknown[]> {
+    const session = this.driver.session();
+    try {
+      const result = await session.run(cypherQuery);
+      return result.records.map((record) => record.toObject());
+    } finally {
+      await session.close();
+    }
+  }
+
+  async close(): Promise<void> {
+    await this.driver.close();
+  }
+}
+```
+
+O prefixo `EXPLAIN` antes da query é o que permite **validar a sintaxe sem executar de fato** — o Neo4j monta o plano de execução e retorna erro se a query for inválida, sem tocar nos dados.
+
+## Passo 3 — O query planner: decidir se decompõe a pergunta
+
+```typescript
+// src/graph/queryPlannerNode.ts
+import { z } from "zod";
+
+const QueryAnalysisSchema = z.object({
+  complexity: z.enum(["simple", "complex"]),
+  needsDecomposition: z.boolean(),
+  subQuestions: z.array(z.string()).optional(),
+  reasoning: z.string(),
+});
+
+export function createQueryPlannerNode(llmClient: OpenRouterService) {
+  return async function queryPlannerNode(state: GraphState): Promise<Partial<GraphState>> {
+    const systemPrompt = getSystemPrompt();
+    const userPrompt = getUserPrompt(state.question!);
+
+    const result = await llmClient.generateStructured(systemPrompt, userPrompt, QueryAnalysisSchema);
+
+    if (!result.success) {
+      // fallback seguro: assume caso simples, evita travar o fluxo por erro externo
+      return { isMultiStep: false };
+    }
+
+    const needsDecomposition = Boolean(result.data.needsDecomposition && result.data.subQuestions?.length);
+
+    return {
+      isMultiStep: needsDecomposition,
+      subQuestions: needsDecomposition ? result.data.subQuestions : [],
+      currentStep: 0,
+      subQueries: [],
+      subResults: [],
+    };
+  };
+}
+```
+
+Repare no fallback explícito para `isMultiStep: false` em caso de erro — se a análise de complexidade falhar, o sistema prefere tentar responder com uma única query simples a travar o fluxo inteiro.
+
+## Passo 4 — Determinando qual pergunta processar em cada passo
+
+```typescript
+// src/graph/utils/getCurrentStepQuestion.ts
+export function getCurrentStepQuestion(state: GraphState): string | null {
+  if (!state.isMultiStep || !state.subQuestions.length) {
+    return state.currentStep === undefined ? state.question ?? null : null;
+  }
+
+  if ((state.currentStep ?? 0) >= state.subQuestions.length) {
+    return null; // todos os passos já foram processados
+  }
+
+  return state.subQuestions[state.currentStep ?? 0];
+}
+```
+
+## Passo 5 — O cypher generator
+
+```typescript
+// src/graph/cypherGeneratorNode.ts
+import { z } from "zod";
+
+const CypherQuerySchema = z.object({ query: z.string() });
+
+export function createCypherGeneratorNode(llmClient: OpenRouterService, neo4jService: Neo4jService) {
+  return async function cypherGeneratorNode(state: GraphState): Promise<Partial<GraphState>> {
+    const targetQuestion = getCurrentStepQuestion(state) ?? state.question!;
+    const schema = await neo4jService.getSchema();
+
+    const systemPrompt = getSystemPrompt({ schema, businessContext: getSalesBusinessContext() });
+    const userPrompt = getUserPrompt(targetQuestion);
+
+    const result = await llmClient.generateStructured(systemPrompt, userPrompt, CypherQuerySchema);
+
+    if (!result.success) {
+      return { error: "falha ao gerar query" };
+    }
+
+    if (state.isMultiStep && state.subQueries.length < state.subQuestions.length) {
+      const updatedSubQueries = [...state.subQueries];
+      updatedSubQueries[state.currentStep ?? 0] = result.data.query;
+      return { subQueries: updatedSubQueries, query: result.data.query };
+    }
+
+    return { query: result.data.query };
+  };
+}
+```
+
+O `businessContext` injetado no prompt (regras de negócio como "um aluno só pode ter progresso em cursos que comprou", "status pode ser paid/refunded") é o que ajuda o modelo a gerar queries semanticamente corretas, não só sintaticamente válidas.
+
+## Passo 6 — O cypher executor: validar, executar e decidir o próximo passo
+
+```typescript
+// src/graph/cypherExecutorNode.ts
+async function executeQuery(query: string, neo4jService: Neo4jService) {
+  const isValid = await neo4jService.validateQuery(query);
+  if (!isValid) {
+    return { results: null, error: "falha na validação de sintaxe" };
+  }
+
+  const results = await neo4jService.query(query);
+  if (!results.length) {
+    return { results: [], error: null };
+  }
+
+  return { results, error: null };
+}
+
+export function createCypherExecutorNode(neo4jService: Neo4jService) {
+  return async function cypherExecutorNode(state: GraphState): Promise<Partial<GraphState>> {
+    const { results, error } = await executeQuery(state.query!, neo4jService);
+
+    if (error && results === null) {
+      const attempts = state.correctionAttempts ?? 0;
+      if (attempts < config.maxCorrectionAttempts) {
+        return {
+          validationError: error,
+          originalQuery: state.originalQuery ?? state.query,
+          needsCorrection: true,
+        };
+      }
+      return { error: "não foi possível gerar uma query válida após múltiplas tentativas" };
+    }
+
+    if (state.isMultiStep) {
+      const updatedSubResults = [...state.subResults, results];
+      const nextStep = (state.currentStep ?? 0) + 1;
+      const hasMoreSteps = nextStep < state.subQuestions.length;
+
+      if (hasMoreSteps) {
+        return { subResults: updatedSubResults, currentStep: nextStep, needsCorrection: false };
+      }
+      return { subResults: updatedSubResults, currentStep: nextStep, needsCorrection: false };
+    }
+
+    if (!results?.length) {
+      return { error: "nenhum resultado encontrado no banco de dados" };
+    }
+
+    return { dbResults: results, needsCorrection: false };
+  };
+}
+```
+
+Note a diferença entre dois tipos de "vazio": `results === null` significa **erro de execução** (query inválida, dispara correção); `results.length === 0` significa **query válida, mas sem dados** — tratado como um caso de negócio, não como falha técnica.
+
+## Passo 7 — Roteamento condicional após o executor
+
+```typescript
+function routeAfterExecutor(state: GraphState): string {
+  if (state.error) return "analyticsResponseNode";
+  if (state.needsCorrection) return "cypherCorrectionNode";
+  if (state.isMultiStep && (state.currentStep ?? 0) < state.subQuestions.length) {
+    return "cypherGeneratorNode"; // ainda tem sub-perguntas pendentes
+  }
+  return "analyticsResponseNode";
+}
+```
+
+## Passo 8 — O nó de correção
+
+```typescript
+// src/graph/cypherCorrectionNode.ts
+const CypherCorrectionSchema = z.object({ correctedQuery: z.string() });
+
+export function createCypherCorrectionNode(llmClient: OpenRouterService, neo4jService: Neo4jService) {
+  return async function cypherCorrectionNode(state: GraphState): Promise<Partial<GraphState>> {
+    const schema = await neo4jService.getSchema();
+    const systemPrompt = getSystemPrompt({ schema });
+    const userPrompt = getUserPrompt({
+      query: state.query!,
+      validationError: state.validationError!,
+      originalQuestion: state.question!,
+    });
+
+    const result = await llmClient.generateStructured(systemPrompt, userPrompt, CypherCorrectionSchema);
+
+    if (!result.success) {
+      return { error: "falha ao corrigir query" };
+    }
+
+    return {
+      query: result.data.correctedQuery,
+      originalQuery: state.originalQuery,
+      correctionAttempts: (state.correctionAttempts ?? 0) + 1,
+      needsCorrection: false,
+    };
+  };
+}
+```
+
+A correção volta para o `cypherExecutorNode` (não direto para o cliente) — o ciclo se repete até a query passar na validação ou até esgotar `maxCorrectionAttempts`.
+
+## Passo 9 — O nó de resposta analítica (sucesso e erro)
+
+```typescript
+// src/graph/analyticsResponseNode.ts
+const AnalyticsResponseSchema = z.object({
+  answer: z.string(),
+  followUpQuestions: z.array(z.string()).default([]),
+});
+
+async function renderErrorResponse(state: GraphState, llmClient: OpenRouterService) {
+  const systemPrompt = getSystemPrompt();
+  const userPrompt = getErrorUserPrompt({ error: state.error!, question: state.question! });
+
+  const result = await llmClient.generateStructured(systemPrompt, userPrompt, AnalyticsResponseSchema);
+  const answer = result.success ? result.data.answer : `Ocorreu um erro: ${state.error}`;
+
+  return { messages: [...state.messages, new AIMessage(answer)], answer, followUpQuestions: [] };
+}
+
+async function renderSuccessResponse(state: GraphState, llmClient: OpenRouterService) {
+  const isMultiStepComplete = state.isMultiStep && state.subResults.length && state.subQuestions.length;
+
+  const userPrompt = isMultiStepComplete
+    ? getMultiStepSynthesisPrompt({
+        originalQuestion: state.question,
+        steps: state.subResults.map((results, index) => ({
+          stepNumber: index + 1,
+          question: state.subQuestions[index],
+          query: state.subQueries[index],
+          results: JSON.stringify(results),
+        })),
+      })
+    : getSingleStepUserPrompt({ question: state.question, query: state.query, results: JSON.stringify(state.dbResults) });
+
+  const systemPrompt = getSystemPrompt();
+  const result = await llmClient.generateStructured(systemPrompt, userPrompt, AnalyticsResponseSchema);
+
+  if (!result.success) {
+    return { error: "falha ao gerar resposta final" };
+  }
+
+  return {
+    messages: [...state.messages, new AIMessage(result.data.answer)],
+    answer: result.data.answer,
+    followUpQuestions: result.data.followUpQuestions,
+  };
+}
+
+export function createAnalyticsResponseNode(llmClient: OpenRouterService) {
+  return async function analyticsResponseNode(state: GraphState): Promise<Partial<GraphState>> {
+    if (state.error) {
+      return renderErrorResponse(state, llmClient);
+    }
+    return renderSuccessResponse(state, llmClient);
+  };
+}
+```
+
+O caso multi-step monta um prompt que agrega **cada passo** (pergunta, query, resultado) numa única síntese — é isso que permite ao modelo gerar um relatório coerente combinando várias consultas, em vez de retornar respostas fragmentadas.
+
+## Passo 10 — Montando o grafo completo
+
+```typescript
+export function buildGraph(llmClient: OpenRouterService, neo4jService: Neo4jService) {
+  const workflow = new StateGraph(GraphStateSchema)
+    .addNode("queryPlannerNode", createQueryPlannerNode(llmClient))
+    .addNode("cypherGeneratorNode", createCypherGeneratorNode(llmClient, neo4jService))
+    .addNode("cypherExecutorNode", createCypherExecutorNode(neo4jService))
+    .addNode("cypherCorrectionNode", createCypherCorrectionNode(llmClient, neo4jService))
+    .addNode("analyticsResponseNode", createAnalyticsResponseNode(llmClient))
+    .addEdge(START, "queryPlannerNode")
+    .addEdge("queryPlannerNode", "cypherGeneratorNode")
+    .addEdge("cypherGeneratorNode", "cypherExecutorNode")
+    .addConditionalEdges("cypherExecutorNode", routeAfterExecutor, {
+      cypherCorrectionNode: "cypherCorrectionNode",
+      cypherGeneratorNode: "cypherGeneratorNode",
+      analyticsResponseNode: "analyticsResponseNode",
+    })
+    .addEdge("cypherCorrectionNode", "cypherExecutorNode")
+    .addEdge("analyticsResponseNode", END);
+
+  return workflow.compile();
+}
+```
+
+## Passo 11 — Testando fim a fim
+
+```bash
+npm run seed   # popula o Neo4j com dados de teste (alunos, cursos, vendas, progresso)
+npm run dev
+```
+
+Teste perguntas simples ("quantos cursos existem na academia?") e complexas ("quais cursos são normalmente comprados juntos?"). No LangGraph Studio, observe o grafo: perguntas complexas devem mostrar o ciclo `cypherGeneratorNode ↔ cypherExecutorNode` se repetindo uma vez por sub-pergunta, e o ciclo extra com `cypherCorrectionNode` quando uma query falha.
+
+## Onde isso te deixa
+
+Você tem agora um agente de "texto para query" com três camadas de resiliência: decomposição de perguntas complexas em sub-perguntas, validação e correção automática de queries inválidas, e um limite de tentativas explícito para nunca entrar em loop infinito — o padrão completo de como transformar uma pergunta de negócio livre em uma resposta confiável, mesmo usando modelos de LLM mais baratos e propensos a erro.
+
+## Verifique seu entendimento
+
+1. Qual a diferença de tratamento entre uma query que falha na validação de sintaxe e uma query válida que retorna zero resultados?
+2. Por que `EXPLAIN` é usado antes de executar a query de fato?
+3. O que aconteceria se `cypherCorrectionNode` não tivesse um limite de tentativas (`maxCorrectionAttempts`)?
+4. Por que o prompt de síntese multi-step recebe cada sub-pergunta, sua query e seu resultado, em vez de só o resultado final agregado?
+</script>
+
+<script>
+const LESSONS = [
+  {
+    "id": "01-artigo",
+    "file": "01-artigo-text-to-cypher-multi-step-reasoning.md",
+    "aula": 1,
+    "tipo": "artigo",
+    "title": "De pergunta em linguagem natural a query de grafo: multi-step reasoning",
+    "label": "Text-to-Cypher e multi-step reasoning"
+  },
+  {
+    "id": "01-tutorial",
+    "file": "01-tutorial-agente-de-relatorios-com-neo4j.md",
+    "aula": 1,
+    "tipo": "tutorial",
+    "title": "Tutorial: agente de relatórios com Neo4j, multi-step e auto-correção",
+    "label": "Agente de relatórios com Neo4j"
+  }
+];
+const FILE_TO_ID = {
+  "01-artigo-text-to-cypher-multi-step-reasoning.md": "01-artigo",
+  "01-tutorial-agente-de-relatorios-com-neo4j.md": "01-tutorial"
+};
+
+const STATIONS = [1].map((aula) => ({
+  aula,
+  docs: LESSONS.filter((l) => l.aula === aula),
+}));
+
+const STATION_EYEBROW = {
+  artigo: "Aulas 1-5",
+  tutorial: "Aulas 1-5",
+};
+const TIPO_LABEL = {
+  artigo: "conceito",
+  tutorial: "mão na massa",
+};
+const TIPO_TAG = { artigo: "Artigo", tutorial: "Tutorial" };
+const DOT_LABEL = { artigo: "1-5", tutorial: "1-5" };
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function inline(text) {
+  let t = escapeHtml(text);
+  t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+  t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, href) => {
+    const targetId = FILE_TO_ID[href];
+    if (targetId) {
+      return '<button type="button" class="inline-link" data-nav="' + targetId + '">' + label + "</button>";
+    }
+    return label;
+  });
+  return t;
+}
+
+function renderTable(headerLine, bodyLines) {
+  const splitRow = (line) =>
+    line
+      .split("|")
+      .map((s) => s.trim())
+      .filter((s, idx, arr) => !(idx === 0 && s === "") && !(idx === arr.length - 1 && s === ""));
+  const header = splitRow(headerLine);
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  header.forEach((h) => (html += "<th>" + inline(h) + "</th>"));
+  html += "</tr></thead><tbody>";
+  bodyLines.forEach((line) => {
+    const cells = splitRow(line);
+    html += "<tr>";
+    cells.forEach((c) => (html += "<td>" + inline(c) + "</td>"));
+    html += "</tr>";
+  });
+  html += "</tbody></table></div>";
+  return html;
+}
+
+function buildList(items) {
+  let idx = 0;
+  function parseLevel(indent) {
+    let out = "";
+    let type = "ul";
+    while (idx < items.length && items[idx].indent >= indent) {
+      const item = items[idx];
+      type = item.ordered ? "ol" : "ul";
+      idx++;
+      let child = "";
+      if (idx < items.length && items[idx].indent > indent) {
+        child = parseLevel(items[idx].indent);
+      }
+      out += "<li>" + inline(item.text) + child + "</li>";
+    }
+    return "<" + type + ">" + out + "</" + type + ">";
+  }
+  return parseLevel(items[0] ? items[0].indent : 0);
+}
+
+function isTableSeparator(line) {
+  return /^\s*\|?[\s:-]+\|[\s:|-]*$/.test(line) && line.includes("-");
+}
+
+const JS_KEYWORDS = new Set([
+  "import", "export", "default", "from", "as", "const", "let", "var", "function",
+  "return", "if", "else", "for", "while", "do", "switch", "case", "break", "continue",
+  "async", "await", "new", "type", "interface", "class", "extends", "implements",
+  "typeof", "instanceof", "in", "of", "this", "super", "static", "public", "private",
+  "protected", "readonly", "enum", "void", "throw", "try", "catch", "finally", "yield",
+  "delete", "true", "false", "null", "undefined",
+]);
+
+function highlightCode(code) {
+  const tokenRegex =
+    /(\/\/[^\n]*)|(\/\*[\s\S]*?\*\/)|(`(?:\\.|[^`\\])*`)|("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][A-Za-z0-9_$]*)|(\s+)|([^\sA-Za-z0-9_$'"`]+)|(.)/g;
+  let out = "";
+  let m;
+  while ((m = tokenRegex.exec(code))) {
+    if (m[1] || m[2]) {
+      out += '<span class="tok-comment">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[3] || m[4] || m[5]) {
+      out += '<span class="tok-string">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[6]) {
+      out += '<span class="tok-number">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[7]) {
+      const word = m[0];
+      if (JS_KEYWORDS.has(word)) {
+        out += '<span class="tok-keyword">' + escapeHtml(word) + "</span>";
+      } else if (/^[A-Z]/.test(word)) {
+        out += '<span class="tok-type">' + escapeHtml(word) + "</span>";
+      } else if (/^\s*\(/.test(code.slice(tokenRegex.lastIndex))) {
+        out += '<span class="tok-func">' + escapeHtml(word) + "</span>";
+      } else {
+        out += escapeHtml(word);
+      }
+    } else {
+      out += escapeHtml(m[0]);
+    }
+  }
+  return out;
+}
+
+function parseMarkdown(md) {
+  const lines = md.split("\n");
+  let html = "";
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (/^\s*$/.test(line)) {
+      i++;
+      continue;
+    }
+
+    const fence = line.match(/^```(\w*)/);
+    if (fence) {
+      const lang = fence[1] || "texto";
+      const codeLines = [];
+      i++;
+      while (i < lines.length && !/^```/.test(lines[i])) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      i++;
+      html +=
+        '<div class="code-card"><div class="code-lang">' +
+        escapeHtml(lang) +
+        "</div><pre><code>" +
+        highlightCode(codeLines.join("\n")) +
+        "</code></pre></div>";
+      continue;
+    }
+
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if (h) {
+      const level = h[1].length;
+      html += "<h" + level + ">" + inline(h[2]) + "</h" + level + ">";
+      i++;
+      continue;
+    }
+
+    if (/^-{3,}\s*$/.test(line)) {
+      html += "<hr>";
+      i++;
+      continue;
+    }
+
+    if (/^>\s?/.test(line)) {
+      const qLines = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        qLines.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      html += "<blockquote>" + parseMarkdown(qLines.join("\n")) + "</blockquote>";
+      continue;
+    }
+
+    if (line.includes("|") && lines[i + 1] && isTableSeparator(lines[i + 1])) {
+      const headerLine = line;
+      const bodyLines = [];
+      i += 2;
+      while (i < lines.length && lines[i].includes("|") && lines[i].trim() !== "") {
+        bodyLines.push(lines[i]);
+        i++;
+      }
+      html += renderTable(headerLine, bodyLines);
+      continue;
+    }
+
+    if (/^\s*(-\s+|\d+\.\s+)/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*(-\s+|\d+\.\s+)/.test(lines[i])) {
+        const m = lines[i].match(/^(\s*)(-\s+|(\d+)\.\s+)(.*)$/);
+        items.push({ indent: m[1].length, ordered: !!m[3], text: m[4] });
+        i++;
+      }
+      html += buildList(items);
+      continue;
+    }
+
+    const pLines = [];
+    while (
+      i < lines.length &&
+      lines[i].trim() !== "" &&
+      !/^(#{1,4}\s|```|>\s?|-{3,}\s*$|\s*(-\s+|\d+\.\s+))/.test(lines[i])
+    ) {
+      pLines.push(lines[i]);
+      i++;
+    }
+    if (pLines.length) {
+      html += "<p>" + inline(pLines.join(" ")) + "</p>";
+    } else {
+      i++;
+    }
+  }
+  return html;
+}
+
+const PROGRESS_KEY = "modulo06-neo4j-progress";
+function loadProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function saveProgress(p) {
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+}
+let progress = loadProgress();
+
+const FLAT_ORDER = LESSONS.map((l) => l.id);
+let currentId = FLAT_ORDER[0];
+let lastTipoPerAula = {};
+
+function renderRoute() {
+  const routeEl = document.getElementById("route");
+  routeEl.innerHTML = "";
+  STATIONS.forEach((station, idx) => {
+    const total = station.docs.length;
+    const doneCount = station.docs.filter((d) => progress[d.id]).length;
+    const visited = doneCount === total;
+    const partial = doneCount > 0 && doneCount < total;
+
+    const wrap = document.createElement("div");
+    wrap.className = "relative flex gap-3.5 py-0.5 pl-1";
+
+    if (idx < STATIONS.length - 1) {
+      const lineEl = document.createElement("div");
+      lineEl.className =
+        "absolute left-[15px] top-[26px] bottom-[-3px] w-0.5 " +
+        (visited ? "bg-[var(--accent-route)]" : "bg-[var(--line)]");
+      wrap.appendChild(lineEl);
+    }
+
+    const dot = document.createElement("div");
+    dot.className =
+      "flex-none w-6 h-6 rounded-full border-2 grid place-items-center font-mono text-[0.65rem] z-10 transition-colors " +
+      (visited
+        ? "border-[var(--accent-route)] bg-[var(--accent-route)] text-[var(--bg)]"
+        : partial
+        ? "border-[var(--accent-route)] text-[var(--ink-faint)] bg-[conic-gradient(var(--accent-route)_0_50%,transparent_50%_100%)]"
+        : "border-[var(--line)] bg-[var(--bg)] text-[var(--ink-faint)]");
+    dot.textContent = DOT_LABEL[station.docs[0].tipo];
+    wrap.appendChild(dot);
+
+    const btn = document.createElement("button");
+    const activeDoc = station.docs.find((d) => d.id === currentId);
+    btn.className =
+      "flex-1 text-left px-2 pt-1 pb-3 rounded-lg transition-colors " +
+      (activeDoc ? "text-[var(--ink)]" : "text-[var(--ink-soft)] hover:text-[var(--ink)]");
+    const first = station.docs[0];
+    btn.innerHTML =
+      '<div class="font-mono text-[0.62rem] tracking-[0.08em] uppercase text-[var(--ink-faint)]">' +
+      STATION_EYEBROW[first.tipo] +
+      '</div><div class="text-[0.88rem] leading-snug mt-0.5' +
+      (activeDoc ? " font-semibold" : "") +
+      '">' +
+      escapeHtml(first.label) +
+      "</div>";
+    btn.addEventListener("click", () => {
+      const aulaState = lastTipoPerAula[station.aula];
+      const target = station.docs.find((d) => d.tipo === aulaState) || first;
+      navigateTo(target.id);
+    });
+    wrap.appendChild(btn);
+    routeEl.appendChild(wrap);
+  });
+}
+
+const TIPO_COLORS = {
+  artigo: "bg-[var(--accent-artigo-soft)] text-[var(--accent-artigo)]",
+  tutorial: "bg-[var(--accent-tutorial-soft)] text-[var(--accent-tutorial)]",
+};
+
+function renderTypeToggle(doc) {
+  const wrap = document.getElementById("typeToggleWrap");
+  const siblings = LESSONS.filter((l) => l.aula === doc.aula);
+  if (siblings.length < 2) {
+    wrap.innerHTML = "";
+    return;
+  }
+  const toggle = document.createElement("div");
+  toggle.className = "inline-flex gap-1.5 p-1 rounded-full mb-7 bg-[var(--bg-elevated)]";
+  siblings.forEach((s) => {
+    const btn = document.createElement("button");
+    const active = s.id === doc.id;
+    btn.className =
+      "px-4 py-1.5 rounded-full text-[0.82rem] font-semibold transition-colors " +
+      (active ? TIPO_COLORS[s.tipo] : "text-[var(--ink-soft)]");
+    btn.textContent = s.tipo === "artigo" ? "Conceito" : "Mão na massa";
+    btn.addEventListener("click", () => navigateTo(s.id));
+    toggle.appendChild(btn);
+  });
+  wrap.innerHTML = "";
+  wrap.appendChild(toggle);
+}
+
+function renderLesson(id) {
+  const doc = LESSONS.find((l) => l.id === id);
+  if (!doc) return;
+  currentId = id;
+  lastTipoPerAula[doc.aula] = doc.tipo;
+
+  document.getElementById("lessonEyebrow").textContent =
+    STATION_EYEBROW[doc.tipo] + " · " + TIPO_LABEL[doc.tipo];
+  document.getElementById("lessonTitle").textContent = doc.title;
+
+  const tagEl = document.getElementById("docTag");
+  tagEl.className =
+    "inline-block font-mono text-[0.68rem] tracking-[0.06em] uppercase px-2 py-0.5 rounded-md mb-5 " +
+    TIPO_COLORS[doc.tipo];
+  tagEl.textContent = TIPO_TAG[doc.tipo];
+
+  renderTypeToggle(doc);
+
+  const raw = document.getElementById("doc-" + id).textContent;
+  document.getElementById("content").innerHTML = parseMarkdown(raw);
+
+  const markDone = document.getElementById("markDone");
+  markDone.checked = !!progress[id];
+  document.getElementById("markDoneLabel").textContent = progress[id]
+    ? "Concluído"
+    : "Marcar como concluído";
+
+  const idx = FLAT_ORDER.indexOf(id);
+  document.getElementById("prevBtn").disabled = idx <= 0;
+  document.getElementById("nextBtn").disabled = idx >= FLAT_ORDER.length - 1;
+
+  renderRoute();
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+}
+
+function navigateTo(id) {
+  renderLesson(id);
+}
+
+document.getElementById("markDone").addEventListener("change", (e) => {
+  progress[currentId] = e.target.checked;
+  saveProgress(progress);
+  renderLesson(currentId);
+});
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+  const idx = FLAT_ORDER.indexOf(currentId);
+  if (idx > 0) navigateTo(FLAT_ORDER[idx - 1]);
+});
+document.getElementById("nextBtn").addEventListener("click", () => {
+  const idx = FLAT_ORDER.indexOf(currentId);
+  if (idx < FLAT_ORDER.length - 1) navigateTo(FLAT_ORDER[idx + 1]);
+});
+
+document.getElementById("content").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-nav]");
+  if (btn) navigateTo(btn.dataset.nav);
+});
+
+renderLesson(currentId);
+</script>
+</body>
+</html>

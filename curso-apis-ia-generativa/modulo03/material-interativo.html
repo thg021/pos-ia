@@ -1,0 +1,1719 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Módulo 3 — Agente de agendamento e cancelamento</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Charter', 'Georgia', '"Iowan Old Style"', '"Times New Roman"', 'serif'],
+          sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+          mono: ['ui-monospace', '"SF Mono"', '"Cascadia Code"', '"Roboto Mono"', 'Consolas', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+:root {
+  --bg: #eef1ef;
+  --bg-elevated: #e2e8e2;
+  --ink: #171b18;
+  --ink-soft: #4a534c;
+  --ink-faint: #6f786f;
+  --line: #c7d0c7;
+  --accent-route: #b8862e;
+  --accent-route-soft: #b8862e33;
+  --accent-tutorial: #2f8f82;
+  --accent-tutorial-soft: #2f8f8222;
+  --accent-artigo: #7c6bb0;
+  --accent-artigo-soft: #7c6bb022;
+  --accent-quiz: #c1554a;
+  --accent-quiz-soft: #c1554a22;
+  /* Bloco de código: paleta fixa do tema Dracula (dracula-theme.com), independente
+     do tema claro/escuro da página em volta — código sempre lido sobre fundo escuro. */
+  --code-bg: #282a36;
+  --code-fg: #f8f8f2;
+  --code-line: #44475a;
+  --code-comment: #6272a4;
+  --code-string: #f1fa8c;
+  --code-keyword: #ff79c6;
+  --code-func: #50fa7b;
+  --code-number: #bd93f9;
+  --code-type: #8be9fd;
+  --font-display: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151a;
+    --bg-elevated: #191d22;
+    --ink: #e7ebe8;
+    --ink-soft: #aab3ac;
+    --ink-faint: #7c877e;
+    --line: #2b3230;
+    --accent-route: #e0ac4a;
+    --accent-route-soft: #e0ac4a2b;
+    --accent-tutorial: #4fb3a9;
+    --accent-tutorial-soft: #4fb3a92b;
+    --accent-artigo: #9a8cd6;
+    --accent-artigo-soft: #9a8cd62b;
+    --accent-quiz: #e07a6d;
+    --accent-quiz-soft: #e07a6d2b;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151a;
+  --bg-elevated: #191d22;
+  --ink: #e7ebe8;
+  --ink-soft: #aab3ac;
+  --ink-faint: #7c877e;
+  --line: #2b3230;
+  --accent-route: #e0ac4a;
+  --accent-route-soft: #e0ac4a2b;
+  --accent-tutorial: #4fb3a9;
+  --accent-tutorial-soft: #4fb3a92b;
+  --accent-artigo: #9a8cd6;
+  --accent-artigo-soft: #9a8cd62b;
+  --accent-quiz: #e07a6d;
+  --accent-quiz-soft: #e07a6d2b;
+}
+:root[data-theme="light"] {
+  --bg: #eef1ef;
+  --bg-elevated: #e2e8e2;
+  --ink: #171b18;
+  --ink-soft: #4a534c;
+  --ink-faint: #6f786f;
+  --line: #c7d0c7;
+  --accent-route: #b8862e;
+  --accent-route-soft: #b8862e33;
+  --accent-tutorial: #2f8f82;
+  --accent-tutorial-soft: #2f8f8222;
+  --accent-artigo: #7c6bb0;
+  --accent-artigo-soft: #7c6bb022;
+  --accent-quiz: #c1554a;
+  --accent-quiz-soft: #c1554a22;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--accent-route-soft); }
+
+a, button { font-family: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent-route); outline-offset: 2px; }
+
+/* ---------- Scrollbar: thin pill in the route-line accent color ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-route) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--accent-route) 50%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-route);
+}
+*::-webkit-scrollbar-corner { background: transparent; }
+
+.content h1, .content h2, .content h3, .content h4 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+  margin: 1.6em 0 0.5em;
+}
+.content h1 { display: none; } /* título já mostrado no cabeçalho */
+.content h2 { font-size: 1.35rem; border-top: 1px solid var(--line); padding-top: 0.9em; }
+.content h3 { font-size: 1.1rem; color: var(--ink); }
+.content h4 { font-size: 1rem; color: var(--ink-soft); }
+.content p { margin: 0 0 1.1em; color: var(--ink); }
+.content strong { color: var(--ink); }
+.content em { color: var(--ink-soft); }
+.content code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--bg-elevated);
+  padding: 0.12em 0.4em;
+  border-radius: 5px;
+}
+.content ul, .content ol { padding-left: 1.3em; margin: 0 0 1.2em; }
+.content li { margin: 0.35em 0; }
+.content li > ul, .content li > ol { margin-top: 0.35em; }
+.content blockquote {
+  border-left: 3px solid var(--accent-route);
+  margin: 0 0 1.2em;
+  padding: 0.2em 0 0.2em 1em;
+  color: var(--ink-soft);
+}
+.content blockquote p { margin-bottom: 0.6em; }
+.content hr { border: none; border-top: 1px solid var(--line); margin: 2em 0; }
+
+.code-card {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 10px;
+  margin: 0 0 1.4em;
+  overflow: hidden;
+  border: 1px solid var(--code-line);
+}
+.code-lang {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #93a099;
+  padding: 8px 14px 0;
+}
+.code-card pre {
+  margin: 0;
+  padding: 10px 14px 16px;
+  overflow-x: auto;
+}
+.code-card code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  background: none;
+  padding: 0;
+  color: inherit;
+  white-space: pre;
+}
+/* Tokens do "syntax highlighting" — cores oficiais da paleta Dracula */
+.tok-comment { color: var(--code-comment); font-style: italic; }
+.tok-string { color: var(--code-string); }
+.tok-keyword { color: var(--code-keyword); }
+.tok-func { color: var(--code-func); }
+.tok-number { color: var(--code-number); }
+.tok-type { color: var(--code-type); }
+
+.table-wrap { overflow-x: auto; margin: 0 0 1.4em; }
+.content table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+.content th, .content td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.content th {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  background: var(--bg-elevated);
+}
+
+.inline-link {
+  color: var(--accent-tutorial);
+  border-bottom: 1px solid var(--accent-tutorial-soft);
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding: 0;
+  font: inherit;
+}
+.inline-link:hover { border-bottom-color: var(--accent-tutorial); }
+
+/* ---------- Quiz interativo ---------- */
+.quiz-intro { color: var(--ink-soft); margin: 0 0 1.4em; }
+.quiz-wrap { display: flex; flex-direction: column; gap: 1.6em; }
+.quiz-question {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: var(--bg-elevated);
+}
+.quiz-q-text { font-weight: 600; margin-bottom: 0.9em; color: var(--ink); }
+.quiz-options { display: flex; flex-direction: column; gap: 0.55em; }
+.quiz-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6em;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.quiz-option:hover { border-color: var(--line); }
+.quiz-option input { margin-top: 0.3em; accent-color: var(--accent-quiz); flex-shrink: 0; }
+.quiz-option span { color: var(--ink-soft); }
+.quiz-option.is-correct {
+  border-color: var(--accent-tutorial);
+  background: var(--accent-tutorial-soft);
+}
+.quiz-option.is-correct span { color: var(--ink); }
+.quiz-option.is-wrong {
+  border-color: var(--accent-quiz);
+  background: var(--accent-quiz-soft);
+}
+.quiz-option.is-wrong span { color: var(--ink); }
+.quiz-feedback { margin-top: 0.7em; font-size: 0.85rem; font-weight: 600; min-height: 1.2em; }
+.quiz-feedback.is-correct-text { color: var(--accent-tutorial); }
+.quiz-feedback.is-wrong-text { color: var(--accent-quiz); }
+.quiz-score-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin: 0 0 1.4em;
+}
+.quiz-score { font-family: var(--font-mono); font-size: 0.92rem; color: var(--ink); font-weight: 600; }
+</style>
+</head>
+<body class="font-sans">
+<div class="flex flex-col md:flex-row w-full min-h-screen" style="background:var(--bg);color:var(--ink)">
+  <aside class="w-full md:w-[300px] md:shrink-0 border-b md:border-b-0 md:border-r border-[var(--line)] px-5 py-7 md:sticky md:top-0 md:h-screen overflow-y-auto flex flex-col gap-6">
+    <a href="../index.html" class="inline-flex items-center gap-1 text-[0.78rem] font-medium" style="color:var(--ink-faint)">&larr; Início</a>
+    <div>
+      <div class="font-mono text-[0.68rem] tracking-[0.12em] uppercase" style="color:var(--accent-route)">Módulo 3 · APIs de IA Generativa</div>
+      <h1 class="font-display text-[1.35rem] leading-tight mt-1 text-balance">Agente de agendamento e cancelamento</h1>
+      <p class="text-[0.85rem] mt-1.5" style="color:var(--ink-soft)">Do texto solto ao JSON estruturado, e do JSON à ação de verdade. Clique numa estação para ler.</p>
+    </div>
+    <nav class="relative flex flex-col" id="route"></nav>
+    <div class="mt-auto pt-4 border-t text-[0.78rem]" style="border-color:var(--line);color:var(--ink-faint)">
+      Progresso salvo neste navegador. Código-fonte do projeto em
+      <code class="font-mono text-[0.92em] px-1 py-0.5 rounded" style="background:var(--bg-elevated)">docs/curso-apis-ia-generativa/modulo03/</code>.
+    </div>
+  </aside>
+  <main class="flex-1 min-w-0 w-full px-6 md:px-10 lg:px-16 py-12 pb-24">
+    <div class="flex flex-wrap items-baseline gap-3 mb-1">
+      <span class="font-mono text-[0.72rem] tracking-[0.1em] uppercase" style="color:var(--accent-route)" id="lessonEyebrow"></span>
+    </div>
+    <h2 class="font-display text-[clamp(1.6rem,3vw,2.15rem)] leading-tight mt-1.5 mb-4 text-balance" id="lessonTitle"></h2>
+    <div id="typeToggleWrap"></div>
+    <span id="docTag"></span>
+    <article class="content w-full" id="content"></article>
+    <div class="mt-10 pt-5 border-t flex justify-between items-center gap-4 flex-wrap" style="border-color:var(--line)">
+      <label class="flex items-center gap-2 text-[0.88rem]" style="color:var(--ink-soft)">
+        <input type="checkbox" id="markDone" class="w-4 h-4" style="accent-color:var(--accent-route)" />
+        <span id="markDoneLabel">Marcar como concluído</span>
+      </label>
+      <div class="flex gap-2.5">
+        <button id="prevBtn" type="button" class="text-[0.82rem] px-3.5 py-2 border border-[var(--line)] text-[var(--ink-soft)] rounded-lg transition-colors hover:border-[var(--accent-route)] hover:text-[var(--ink)] disabled:opacity-35 disabled:pointer-events-none">&larr; Anterior</button>
+        <button id="nextBtn" type="button" class="text-[0.82rem] px-3.5 py-2 border border-[var(--line)] text-[var(--ink-soft)] rounded-lg transition-colors hover:border-[var(--accent-route)] hover:text-[var(--ink)] disabled:opacity-35 disabled:pointer-events-none">Próxima &rarr;</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="text/plain" id="doc-01-artigo">
+# Transformando linguagem natural em JSON estruturado
+
+> Este artigo cobre as 4 aulas do módulo (identificando intenção, structured JSON, transformando intenção em ação, cancelando consultas) porque, na prática, elas constroem **um único projeto contínuo**, aula após aula — como um agendamento médico por linguagem natural. Faz mais sentido estudar o conceito de uma vez e ver a implementação completa no tutorial que acompanha este artigo.
+
+## O problema central do módulo
+
+Até aqui, o curso te ensinou a chamar um modelo de LLM e receber texto de volta. Mas a maioria das aplicações reais não quer só texto — quer **dado que o sistema consiga usar**: um ID de profissional, uma data, uma ação a executar. O módulo 3 resolve exatamente essa ponte: como pegar uma frase solta ("quero marcar uma consulta com a doutora Ana amanhã às 9h") e transformar isso em um objeto JSON confiável, com campos previsíveis, que o resto do seu sistema consegue consumir sem precisar interpretar texto livre.
+
+## Structured output: pedir para o modelo devolver JSON, não texto
+
+A técnica central é o **structured output** (saída estruturada): você define um **schema** (um "molde" de dados, usando a biblioteca **Zod**) que descreve exatamente quais campos a resposta do modelo deve ter e de que tipo. Em vez de receber uma frase e tentar extrair dados dela com regex ou palavras-chave, você entrega esse schema ao modelo e ele já devolve um JSON validado — encaixado nesse formato.
+
+Isso é uma virada de chave importante: no módulo anterior, o código *interpretava* o texto de um jeito manual (buscando palavras como "upper" ou "lower"). A partir daqui, é o próprio modelo de linguagem que faz essa interpretação — e ele é muito mais robusto para lidar com variações de ordem das palavras, sinônimos e frases mal formadas do que qualquer verificação de string escrita à mão.
+
+## Dois "textos" por chamada: o prompt de sistema e o schema de saída
+
+Um padrão que se repete em toda chamada de LLM estruturada do módulo:
+1. **System prompt**: as regras de como interpretar a entrada — quem são os profissionais disponíveis, que campos extrair, exemplos de entrada/saída (few-shot), e instruções específicas (ex: "sempre responda no idioma do cliente").
+2. **JSON Schema (via Zod)**: o formato exato que a resposta precisa ter — por exemplo, `{ intent: "schedule" | "cancel" | "unknown", professionalId: number, dateTime: string, patientName: string }`.
+
+Sem exemplos no prompt, o modelo tende a se perder mais facilmente — por isso a aula reforça bastante o uso de **few-shot examples** (exemplos concretos de entrada → saída esperada) dentro do próprio system prompt.
+
+## Por que usar o SDK da OpenAI (via OpenRouter) em vez do SDK nativo do OpenRouter
+
+Um detalhe técnico importante: para usar output estruturado de forma confiável, o módulo troca o SDK nativo do OpenRouter pelo **SDK da própria OpenAI** — porém apontando a `baseURL` para o endpoint do OpenRouter. Isso funciona porque o OpenRouter é compatível com a interface da API da OpenAI. A vantagem prática: o SDK da OpenAI (usado através do LangChain) tem suporte mais maduro para `response_format` estruturado com Zod, o que evita ter que fazer `JSON.parse` manual e tratar erros de parsing por conta própria — o parse já vem pronto.
+
+## O padrão de dois passos: entender a intenção, depois agir
+
+O fluxo do agente segue sempre a mesma estrutura de dois momentos:
+
+1. **Identificar a intenção** (`identifyIntent`): o modelo recebe o texto do cliente e devolve um JSON com a intenção (agendar, cancelar, desconhecida) e os dados extraídos (profissional, data, paciente).
+2. **Executar a ação correspondente**: dependendo da intenção identificada, o grafo roteia para o nó de agendamento, cancelamento, ou uma resposta de fallback — exatamente o mesmo mecanismo de aresta condicional (`addConditionalEdges`) já visto no módulo anterior, só que agora a decisão de rota vem de uma extração feita por IA, não de um `if` simples.
+
+Depois de executar a ação (chamando um serviço interno, que simula uma API/banco de dados real), o resultado (sucesso ou erro) é traduzido de volta para linguagem natural por um terceiro nó — o **gerador de mensagens** — que também usa structured output, mas dessa vez para produzir uma mensagem amigável a partir de um resultado técnico (sucesso/erro + detalhes).
+
+## "Confio, mas confiro": validação em cada nó
+
+Um princípio de engenharia reforçado no módulo: mesmo que a IA já tenha extraído e validado os dados na etapa de identificação de intenção, cada nó seguinte **revalida o que recebeu** (usando `schema.safeParse` do Zod) antes de agir. A justificativa é tratar cada nó como se fosse um microsserviço independente — você não confia cegamente que quem chamou já validou tudo certo, porque isso protege contra dados incompletos ou mal-formados que passaram pela etapa anterior por qualquer motivo (falha da IA, schema mal definido, etc.).
+
+## Injeção de dependência continua sendo o padrão
+
+Assim como no módulo anterior, os nós que precisam de acesso à IA (identificar intenção, gerar mensagem) ou a um serviço de dados (agendar, cancelar) recebem essas dependências de fora — via uma "factory" que monta o grafo — em vez de instanciá-las internamente. Isso mantém nós como o de agendamento/cancelamento **sem nenhum conhecimento sobre como a IA funciona**: eles só recebem dados já validados e chamam um serviço.
+
+## Verifique seu entendimento
+
+1. Qual a diferença entre "extrair dados de um texto com regex/palavras-chave" e "pedir output estruturado a um modelo de LLM"?
+2. Por que o módulo usa o SDK da OpenAI (apontando para a URL do OpenRouter) em vez do SDK nativo do OpenRouter para esse caso específico?
+3. O que são "few-shot examples" dentro de um system prompt, e por que a aula insiste tanto em usá-los?
+4. Por que cada nó do grafo revalida os dados recebidos, mesmo que uma etapa anterior já os tenha validado?
+5. Descreva o papel do "gerador de mensagens" no fluxo — por que ele também precisa de acesso à IA, diferente dos nós de agendamento/cancelamento?
+</script>
+
+<script type="text/plain" id="doc-01-tutorial">
+# Tutorial: agendamento e cancelamento de consultas com output estruturado
+
+Este tutorial cobre a implementação completa do módulo: um agente que identifica se o cliente quer **agendar** ou **cancelar** uma consulta médica a partir de uma frase em linguagem natural, executa a ação correspondente contra um serviço interno (simulando uma API real), e devolve uma resposta amigável ao cliente.
+
+## Passo 0 — Ponto de partida
+
+Reaproveite a estrutura do módulo anterior (grafo LangGraph + API Fastify + testes end-to-end via `app.inject`). Adicione ao projeto:
+
+```bash
+npm install zod@3
+```
+
+> A versão 3 do Zod é usada de propósito — versões mais novas tinham incompatibilidades conhecidas com certas integrações do LangChain no momento da gravação da aula.
+
+## Passo 1 — Modelar o estado do grafo
+
+O estado agora carrega os dados extraídos da conversa, não só um comando simples:
+
+```typescript
+// src/graph/graph.ts
+import { z } from "zod"; // zod@3
+
+const GraphStateSchema = z.object({
+  messages: z.custom<BaseMessage[]>().default(() => []),
+  intent: z.enum(["schedule", "cancel", "unknown"]).optional(),
+  professionalId: z.number().optional(),
+  professionalName: z.string().optional(),
+  dateTime: z.string().optional(),
+  patientName: z.string().optional(),
+  reason: z.string().optional(),
+  actionSuccess: z.boolean().optional(),
+  actionError: z.string().optional(),
+});
+
+export type GraphState = z.infer<typeof GraphStateSchema>;
+```
+
+## Passo 2 — O schema de saída da identificação de intenção
+
+Esse é o "molde" que o modelo de LLM precisa preencher ao interpretar a mensagem do cliente:
+
+```typescript
+// src/graph/identifyIntentNode.ts
+import { z } from "zod";
+
+export const IntentSchema = z.object({
+  intent: z.enum(["schedule", "cancel", "unknown"]),
+  professionalId: z.number().optional(),
+  professionalName: z.string().optional(),
+  dateTime: z.string().optional(),
+  patientName: z.string().optional(),
+  reason: z.string().optional(),
+});
+```
+
+## Passo 3 — O serviço de LLM com output estruturado
+
+Diferente do módulo anterior (que usava o SDK nativo do OpenRouter), aqui usamos o SDK da própria OpenAI apontando para a URL do OpenRouter — para aproveitar o suporte nativo a `response_format` estruturado:
+
+```typescript
+// src/openrouter-service.ts
+import { ChatOpenAI } from "@langchain/openai";
+import { SystemMessage, HumanMessage } from "@langchain/core/messages";
+import { z } from "zod";
+import { type ModelConfig, config as defaultConfig } from "./config.ts";
+
+export class OpenRouterService {
+  private config: ModelConfig;
+  private llmClient: ChatOpenAI;
+
+  constructor(configOverride?: Partial<ModelConfig>) {
+    this.config = { ...defaultConfig, ...configOverride };
+    this.llmClient = new ChatOpenAI({
+      apiKey: this.config.apiKey,
+      modelName: this.config.models[0],
+      temperature: this.config.temperature,
+      configuration: {
+        baseURL: "https://openrouter.ai/api/v1",
+        defaultHeaders: {
+          "HTTP-Referer": this.config.httpReferer,
+          "X-Title": this.config.xTitle,
+        },
+      },
+      modelKwargs: {
+        models: this.config.models,
+        provider: this.config.provider,
+      },
+    });
+  }
+
+  async generateStructured<T extends z.ZodTypeAny>(
+    systemPrompt: string,
+    userPrompt: string,
+    schema: T,
+  ): Promise<{ success: true; data: z.infer<T> } | { success: false; error: string }> {
+    try {
+      const structuredLlm = this.llmClient.withStructuredOutput(schema);
+      const data = await structuredLlm.invoke([
+        new SystemMessage(systemPrompt),
+        new HumanMessage(userPrompt),
+      ]);
+      return { success: true, data };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, error: message };
+    }
+  }
+}
+```
+
+Pontos importantes:
+- `withStructuredOutput(schema)` é o método do LangChain que instrui o modelo a devolver dados já validados contra o schema Zod — sem você precisar chamar `JSON.parse` manualmente.
+- O retorno usa um formato de **resultado explícito** (`{ success: true, data }` ou `{ success: false, error }`) em vez de deixar a exceção "vazar" — isso obriga quem chama a tratar os dois casos.
+- `modelKwargs.provider` mantém o mesmo mecanismo de seleção de modelo por preço/throughput do módulo 1.
+
+## Passo 4 — O nó `identifyIntent`
+
+```typescript
+// src/graph/identifyIntentNode.ts (continuação)
+import type { GraphState } from "./graph.ts";
+import type { OpenRouterService } from "../openrouter-service.ts";
+import { getSystemPrompt, getUserPrompt } from "./prompts/identifyIntentPrompts.ts";
+
+export function createIdentifyIntentNode(llmClient: OpenRouterService) {
+  return async function identifyIntentNode(state: GraphState): Promise<Partial<GraphState>> {
+    const lastMessage = state.messages.at(-1);
+    const input = lastMessage?.text ?? "";
+
+    const systemPrompt = getSystemPrompt(); // inclui lista de profissionais e regras
+    const userPrompt = getUserPrompt(input);
+
+    const result = await llmClient.generateStructured(systemPrompt, userPrompt, IntentSchema);
+
+    if (!result.success) {
+      console.error("erro ao identificar intenção", result.error);
+      return { intent: "unknown", actionError: result.error };
+    }
+
+    console.log("intenção identificada:", result.data.intent);
+    return { ...result.data };
+  };
+}
+```
+
+Note que a função **retorna apenas o estado parcial** (`Partial<GraphState>`) — é o próprio LangGraph quem funde esse retorno parcial com o estado acumulado, então não é preciso reconstruir o objeto inteiro a cada nó.
+
+## Passo 5 — Roteamento condicional pela intenção
+
+```typescript
+function routeByIntent(state: GraphState): string {
+  switch (state.intent) {
+    case "schedule":
+      return "scheduleNode";
+    case "cancel":
+      return "cancelNode";
+    default:
+      return "messageGeneratorNode";
+  }
+}
+```
+
+## Passo 6 — O nó de agendamento, com dupla validação
+
+```typescript
+// src/graph/scheduleNode.ts
+import { z } from "zod";
+import type { GraphState } from "./graph.ts";
+import type { AppointmentService } from "../services/appointmentService.ts";
+
+const ScheduleRequiredSchema = z.object({
+  professionalId: z.number(),
+  dateTime: z.string(),
+  patientName: z.string(),
+});
+
+export function createScheduleNode(appointmentService: AppointmentService) {
+  return async function scheduleNode(state: GraphState): Promise<Partial<GraphState>> {
+    const validation = ScheduleRequiredSchema.safeParse(state);
+
+    if (!validation.success) {
+      const errorMessages = validation.error.errors.map((e) => e.message).join(", ");
+      return { actionSuccess: false, actionError: errorMessages };
+    }
+
+    try {
+      const appointment = await appointmentService.bookAppointment({
+        professionalId: validation.data.professionalId,
+        dateTime: new Date(validation.data.dateTime),
+        patientName: validation.data.patientName,
+        reason: state.reason ?? "general consultation",
+      });
+
+      return { actionSuccess: true, ...appointment };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { actionSuccess: false, actionError: message };
+    }
+  };
+}
+```
+
+Repare no princípio de **"confio, mas confiro"**: mesmo que a IA já tenha extraído os dados no nó anterior, este nó revalida com seu próprio schema antes de agir — tratando cada nó como se fosse um microsserviço independente que não confia cegamente na etapa anterior.
+
+## Passo 7 — O nó de cancelamento (mesma estrutura)
+
+```typescript
+// src/graph/cancelNode.ts
+import { z } from "zod";
+import type { GraphState } from "./graph.ts";
+import type { AppointmentService } from "../services/appointmentService.ts";
+
+const CancelRequiredSchema = z.object({
+  professionalId: z.number(),
+  dateTime: z.string(),
+  patientName: z.string(),
+});
+
+export function createCancelNode(appointmentService: AppointmentService) {
+  return async function cancelNode(state: GraphState): Promise<Partial<GraphState>> {
+    const validation = CancelRequiredSchema.safeParse(state);
+
+    if (!validation.success) {
+      const errorMessages = validation.error.errors.map((e) => e.message).join(", ");
+      return { actionSuccess: false, actionError: errorMessages };
+    }
+
+    try {
+      await appointmentService.cancelAppointment({
+        professionalId: validation.data.professionalId,
+        dateTime: new Date(validation.data.dateTime),
+        patientName: validation.data.patientName,
+      });
+      return { actionSuccess: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { actionSuccess: false, actionError: message };
+    }
+  };
+}
+```
+
+## Passo 8 — O gerador de mensagens (JSON → linguagem natural, de volta)
+
+Este é o nó final: recebe o resultado técnico (sucesso/erro + detalhes) e usa a IA de novo — dessa vez para transformar isso em uma mensagem amigável:
+
+```typescript
+// src/graph/messageGeneratorNode.ts
+import { z } from "zod";
+import { AIMessage } from "@langchain/core/messages";
+import type { GraphState } from "./graph.ts";
+import type { OpenRouterService } from "../openrouter-service.ts";
+import { getSystemPrompt, getUserPrompt } from "./prompts/messageGeneratorPrompts.ts";
+
+const MessageSchema = z.object({ message: z.string() });
+
+export function createMessageGeneratorNode(llmClient: OpenRouterService) {
+  return async function messageGeneratorNode(state: GraphState): Promise<Partial<GraphState>> {
+    const scenario = `${state.intent ?? "unknown"}_${state.actionSuccess ? "success" : "error"}`;
+    const details = {
+      professionalName: state.professionalName,
+      dateTime: state.dateTime,
+      patientName: state.patientName,
+      error: state.actionError,
+    };
+
+    const systemPrompt = getSystemPrompt();
+    const userPrompt = getUserPrompt({ scenario, details });
+
+    const result = await llmClient.generateStructured(systemPrompt, userPrompt, MessageSchema);
+
+    if (!result.success) {
+      return { messages: [...state.messages, new AIMessage("Desculpe, ocorreu um erro.")] };
+    }
+
+    return { messages: [...state.messages, new AIMessage(result.data.message)] };
+  };
+}
+```
+
+Repare que o `scenario` (ex: `"schedule_success"`, `"cancel_error"`) é passado para o prompt para ajudar o modelo a escolher o tom certo de resposta — a aula recomenda incluir alguns cenários e exemplos correspondentes no system prompt, para a IA não "viajar" na resposta.
+
+## Passo 9 — Montando o grafo completo
+
+```typescript
+export function buildGraph(llmClient: OpenRouterService, appointmentService: AppointmentService) {
+  const workflow = new StateGraph(GraphStateSchema)
+    .addNode("identifyIntent", createIdentifyIntentNode(llmClient))
+    .addNode("scheduleNode", createScheduleNode(appointmentService))
+    .addNode("cancelNode", createCancelNode(appointmentService))
+    .addNode("messageGeneratorNode", createMessageGeneratorNode(llmClient))
+    .addEdge(START, "identifyIntent")
+    .addConditionalEdges("identifyIntent", routeByIntent, {
+      scheduleNode: "scheduleNode",
+      cancelNode: "cancelNode",
+      messageGeneratorNode: "messageGeneratorNode",
+    })
+    .addEdge("scheduleNode", "messageGeneratorNode")
+    .addEdge("cancelNode", "messageGeneratorNode")
+    .addEdge("messageGeneratorNode", END);
+
+  return workflow.compile();
+}
+```
+
+Repare que `identifyIntent` e `messageGeneratorNode` recebem `llmClient` (precisam de IA), enquanto `scheduleNode` e `cancelNode` recebem `appointmentService` (só processam dados) — cada nó só conhece a dependência que realmente precisa, seguindo o mesmo princípio de injeção de dependência via factory já visto no módulo anterior.
+
+## Passo 10 — Testando o fluxo completo
+
+```typescript
+test("agenda uma consulta com sucesso", async () => {
+  const app = createServer(buildGraph(llmClient, appointmentService));
+
+  const response = await app.inject({
+    method: "POST",
+    url: "/chat",
+    body: { question: "Meu nome é João da Silva, quero agendar uma consulta com o doutor Alison hoje às 14h" },
+  });
+
+  const body = response.json();
+  assert.strictEqual(body.intent, "schedule");
+});
+
+test("cancela uma consulta existente", async () => {
+  // ...mesmo padrão, mudando a mensagem para uma intenção de cancelamento
+});
+```
+
+Rode com `npm test`. Como os testes chamam a API real do OpenRouter (mesmo em modelos gratuitos), espere alguns segundos por teste — e use `.skip` temporariamente em testes que você não está depurando no momento, para evitar gastar tokens/tempo à toa durante o desenvolvimento.
+
+## Passo 11 — Explorando no LangGraph Studio
+
+Suba o projeto com o script configurado para o Studio e, na aba de chat, mande mensagens variando a ordem das palavras (ex: "quero uma consulta amanhã às 10h com a doutora Carol" vs. "amanhã às 10h quero consulta com a doutora Carol"). Isso demonstra visualmente por que usar um modelo de LLM para extrair intenção é mais robusto que checagem de palavra-chave: a ordem das palavras não importa para o modelo. A aba de **trace** do Studio (ou do LangSmith) mostra o tempo gasto em cada etapa — útil para identificar qual nó está consumindo mais tempo/tokens.
+
+## Onde isso te deixa
+
+Você tem agora um agente que: extrai intenção e dados estruturados de linguagem natural, valida esses dados de forma independente em cada nó, executa uma ação de negócio real (mesmo que simulada), e traduz o resultado de volta para uma mensagem natural — o ciclo completo "texto → JSON → ação → texto" que é a espinha dorsal da maioria dos agentes de IA aplicados a produtos reais.
+
+## Verifique seu entendimento
+
+1. O que `withStructuredOutput(schema)` resolve que você teria que fazer manualmente sem ele?
+2. Por que os nós `scheduleNode` e `cancelNode` fazem sua própria validação com Zod, mesmo recebendo dados que a IA já devia ter validado na etapa de `identifyIntent`?
+3. Por que `identifyIntent` e `messageGeneratorNode` recebem o cliente de LLM como dependência, mas `scheduleNode` e `cancelNode` não?
+4. O que aconteceria se dois clientes tentassem agendar o mesmo horário com o mesmo profissional ao mesmo tempo, dado como o `appointmentService` foi descrito aqui?
+</script>
+
+<script type="text/plain" id="doc-02-anotacao">
+# Anotação: explicação linha a linha do projeto do módulo 3
+
+Este documento explica, arquivo por arquivo e linha por linha, o projeto criado em `docs/curso-apis-ia-generativa/modulo03/project/` — um agente LangGraph que interpreta, em linguagem natural, se o cliente quer **agendar** ou **cancelar** uma consulta médica, extrai os dados necessários com **output estruturado** (JSON validado por Zod, sem `JSON.parse` manual), executa a ação contra um serviço interno, e devolve uma mensagem amigável.
+
+## Visão geral: o desenho do grafo
+
+```
+START → identifyIntent ─┬─ "schedule" → scheduleNode ─┐
+                         ├─ "cancel"  → cancelNode   ─┼─→ messageGeneratorNode → END
+                         └─ "unknown" ────────────────┘
+```
+
+Repare que este grafo é **mais enxuto** que o do módulo 2: não existe um nó separado para "empacotar a resposta final" (como o `chatResponseNode` de lá) — quem adiciona a `AIMessage` ao histórico é o próprio `messageGeneratorNode`, porque ele já precisa chamar a IA de qualquer forma para gerar o texto.
+
+## `src/config.ts`
+
+```typescript
+export type ModelConfig = {
+  apiKey: string;
+  httpReferer: string;
+  xTitle: string;
+  models: string[];
+  temperature: number;
+  provider: {
+    sort: "price" | "throughput" | "latency";
+    allowFallbacks: boolean;
+  };
+};
+
+const apiKey = process.env.OPENROUTER_API_KEY;
+console.assert(apiKey, "OPENROUTER_API_KEY not set in the environment");
+
+export const config: ModelConfig = {
+  apiKey: apiKey!,
+  httpReferer: "https://pos-ia.com.br",
+  xTitle: "modulo03-agendamento-cancelamento",
+  models: ["arcee-ai/trinity-large-preview:free"],
+  temperature: 0.2,
+  provider: {
+    sort: "throughput",
+    allowFallbacks: true,
+  },
+};
+```
+
+- **`ModelConfig`**: o mesmo padrão usado no projeto do módulo 1 — um **tipo** que descreve todos os campos de configuração num lugar só, para o TypeScript avisar em tempo de compilação se algum campo estiver faltando.
+- **`apiKey!`**: o `!` é o operador de **asserção não-nula** do TypeScript — diz ao compilador "confie em mim, isso não vai ser `undefined` aqui". Se a variável de ambiente realmente não existir, o erro só aparece em runtime, na primeira chamada à API.
+- **`models`**: uma lista com **um** modelo gratuito que suporta `response_format` estruturado — nem todo modelo do OpenRouter aceita output estruturado, então essa lista precisa ser filtrada por essa capacidade na aba "Models" do OpenRouter.
+
+## `src/openrouter-service.ts` — o cliente de LLM com output estruturado
+
+```typescript
+export class OpenRouterService {
+  private config: ModelConfig;
+  private llmClient: ChatOpenAI;
+
+  constructor(configOverride?: Partial<ModelConfig>) {
+    this.config = { ...defaultConfig, ...configOverride };
+    this.llmClient = new ChatOpenAI({
+      apiKey: this.config.apiKey,
+      modelName: this.config.models[0],
+      temperature: this.config.temperature,
+      configuration: {
+        baseURL: "https://openrouter.ai/api/v1",
+        defaultHeaders: {
+          "HTTP-Referer": this.config.httpReferer,
+          "X-Title": this.config.xTitle,
+        },
+      },
+      modelKwargs: {
+        models: this.config.models,
+        provider: this.config.provider,
+      },
+    });
+  }
+```
+
+- **`new ChatOpenAI(...)`**: `ChatOpenAI` é a classe do `@langchain/openai` feita para falar com a API da OpenAI — e o **truque** aqui é que o OpenRouter expõe uma API compatível (`baseURL`), então dá para reaproveitar essa mesma classe apontando para outro provedor.
+- **`HTTP-Referer` / `X-Title`**: cabeçalhos específicos do OpenRouter — aparecem no painel de uso para identificar de qual aplicação veio a chamada.
+- **`modelKwargs`**: campos que **não fazem parte** da API padrão da OpenAI, mas que o OpenRouter entende — é assim que a lista de modelos (fallback automático) e as regras de roteamento chegam até a requisição HTTP real.
+
+```typescript
+  async generateStructured<T extends z.ZodTypeAny>(
+    systemPrompt: string,
+    userPrompt: string,
+    schema: T,
+  ): Promise<{ success: true; data: z.infer<T> } | { success: false; error: string }> {
+    try {
+      const structuredLlm = this.llmClient.withStructuredOutput(schema);
+      const data = await structuredLlm.invoke([
+        new SystemMessage(systemPrompt),
+        new HumanMessage(userPrompt),
+      ]);
+      return { success: true, data };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, error: message };
+    }
+  }
+}
+```
+
+- **`<T extends z.ZodTypeAny>`**: um **generic** — esse método funciona com **qualquer** schema Zod que você passar, e o TypeScript infere automaticamente o tipo de retorno certo a partir do schema recebido.
+- **Tipo de retorno**: um **union type discriminado** por `success` — em vez de deixar a exceção "vazar", o método sempre devolve `{ success: true, data }` ou `{ success: false, error }`, obrigando quem chama a tratar os dois casos explicitamente.
+- **`withStructuredOutput(schema)`**: converte o schema Zod num JSON Schema, instrui o modelo (via `response_format`) a devolver **apenas** dados nesse formato, e já **valida** a resposta antes de devolver.
+
+## `src/services/appointmentService.ts` — a "API real" simulada
+
+```typescript
+export const professionals: Professional[] = [
+  { id: 1, name: "Dr. Alison Reis", specialty: "Cardiologia" },
+  { id: 2, name: "Dra. Carol Nogueira", specialty: "Dermatologia" },
+  { id: 3, name: "Dra. Beatriz Franco", specialty: "Neurologia" },
+];
+
+const appointments: Appointment[] = [];
+```
+
+- **`professionals`**: uma lista fixa em memória — o "banco de dados" que o prompt de `identifyIntentNode` usa para instruir a IA a combinar o nome citado pelo cliente com um `id` numérico.
+- **`appointments`**: também em memória, e **fora** da classe `AppointmentService` — os agendamentos persistem entre diferentes instâncias do serviço, mas somem quando o processo reinicia. Uma simplificação proposital: numa API de verdade, isso seria uma tabela em banco de dados.
+
+```typescript
+  async bookAppointment(input: {
+    professionalId: number;
+    dateTime: Date;
+    patientName: string;
+    reason: string;
+  }): Promise<Appointment> {
+    if (!this.isAvailable(input.professionalId, input.dateTime)) {
+      throw new Error("Horário indisponível para este profissional");
+    }
+    // ...
+  }
+```
+
+- A regra de negócio central: antes de agendar, **confere** se já não existe outro agendamento no mesmo profissional/horário. Se existir, lança uma exceção — que é justamente o que `scheduleNode` captura no seu `try/catch` para devolver `actionSuccess: false` em vez de derrubar a requisição inteira.
+
+## `src/graph/identifyIntentNode.ts` — a IA decide a intenção
+
+```typescript
+// OpenRouter/OpenAI exigem, em modo de output estruturado estrito, que campos
+// opcionais também sejam `.nullable()` — só `.optional()` não é suportado.
+export const IntentSchema = z.object({
+  intent: z.enum(["schedule", "cancel", "unknown"]),
+  professionalId: z.number().nullable().optional(),
+  professionalName: z.string().nullable().optional(),
+  dateTime: z.string().nullable().optional(),
+  patientName: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
+});
+```
+
+Essa é uma correção sobre o que o tutorial mostra literalmente — ao rodar o projeto de verdade contra a API (modo de **structured outputs** estrito da OpenAI/OpenRouter), campos com só `.optional()` disparam o erro `Zod field ... uses .optional() without .nullable() which is not supported by the API`. O motivo: nesse modo estrito, **todo** campo do JSON Schema precisa aparecer como `"required"`, e a única forma de simular "campo opcional" é permitir `null` como valor válido (`.nullable()`) — em vez de omitir o campo (`.optional()` sozinho). Encadear os dois (`.nullable().optional()`) cobre as duas situações.
+
+```typescript
+export function createIdentifyIntentNode(llmClient: OpenRouterService) {
+  return async function identifyIntentNode(state: GraphState): Promise<Partial<GraphState>> {
+    const lastMessage = state.messages.at(-1);
+    const input = lastMessage?.text ?? "";
+    // ...
+    const result = await llmClient.generateStructured(systemPrompt, userPrompt, IntentSchema);
+
+    if (!result.success) {
+      console.error("erro ao identificar intenção", result.error);
+      return { intent: "unknown", actionError: result.error };
+    }
+
+    return { ...result.data };
+  };
+}
+```
+
+- **`createIdentifyIntentNode`**: essa é uma **factory de nó** — recebe primeiro a dependência (`llmClient`) e só depois devolve a função que o LangGraph vai chamar. É o mesmo princípio de **injeção de dependência** que aparece em `factory.ts` e em `tests/graph.test.ts`.
+- **`Promise<Partial<GraphState>>`**: o nó devolve só um **pedaço** do estado (os campos que ele alterou) — é o próprio LangGraph quem funde esse retorno parcial com o estado acumulado.
+- Se a chamada à IA falhar (rede, autenticação, schema rejeitado), o nó **não deixa a exceção estourar** — cai de propósito em `intent: "unknown"`, transformando uma falha de infraestrutura numa resposta educada, em vez de um erro 500 cru.
+
+## `src/graph/scheduleNode.ts` e `cancelNode.ts` — confio, mas confiro
+
+```typescript
+const ScheduleRequiredSchema = z.object({
+  professionalId: z.number(),
+  dateTime: z.string(),
+  patientName: z.string(),
+});
+
+export function createScheduleNode(appointmentService: AppointmentService) {
+  return async function scheduleNode(state: GraphState): Promise<Partial<GraphState>> {
+    const validation = ScheduleRequiredSchema.safeParse(state);
+
+    if (!validation.success) {
+      const errorMessages = validation.error.errors.map((e) => e.message).join(", ");
+      return { actionSuccess: false, actionError: errorMessages };
+    }
+    // ...
+  };
+}
+```
+
+- **`ScheduleRequiredSchema`**: um schema **diferente** do `IntentSchema` — aqui os três campos são **obrigatórios**, porque, para agendar de verdade, esses dados **precisam** existir. `IntentSchema` descreve o **output esperado da IA**; este schema descreve os **requisitos de negócio** deste nó específico.
+- **`.safeParse(state)`**: diferente de `.parse(...)`, devolve um objeto `{ success, data }` ou `{ success, error }` — permite tratar a falha de validação como um **caminho normal** do código, não como uma exceção a capturar.
+- Este é o princípio de **"confio, mas confiro"**: mesmo que `identifyIntentNode` já tenha extraído e validado os dados na etapa anterior, este nó **revalida** com seu próprio schema antes de agir — tratando cada nó como se fosse um microsserviço independente.
+
+`cancelNode.ts` segue exatamente a mesma estrutura — troca `bookAppointment` por `cancelAppointment`.
+
+## `src/graph/messageGeneratorNode.ts`
+
+```typescript
+const MessageSchema = z.object({ message: z.string() });
+
+export function createMessageGeneratorNode(llmClient: OpenRouterService) {
+  return async function messageGeneratorNode(state: GraphState): Promise<Partial<GraphState>> {
+    const scenario = `${state.intent ?? "unknown"}_${state.actionSuccess ? "success" : "error"}`;
+    // ...
+    if (!result.success) {
+      return { messages: [...state.messages, new AIMessage("Desculpe, ocorreu um erro.")] };
+    }
+
+    return { messages: [...state.messages, new AIMessage(result.data.message)] };
+  };
+}
+```
+
+- **`scenario`**: monta uma string como `"schedule_success"` ou `"cancel_error"` — combinando a intenção identificada com o resultado da ação. É esse valor que o prompt usa para escolher o "tom" certo de resposta, sem precisar de um `if/else` gigante no código: a lógica de "qual mensagem gerar para qual cenário" fica **inteira** dentro do prompt.
+- Este é o **único** lugar do grafo onde `messages` cresce — mesmo papel do `chatResponseNode` no módulo 2, só que agora acoplado à geração da mensagem, porque as duas coisas (gerar o texto e embrulhar numa `AIMessage`) sempre acontecem juntas aqui.
+
+## `src/graph/graph.ts` — o coração do grafo
+
+```typescript
+const GraphStateSchema = z.object({
+  messages: z.custom<BaseMessage[]>().default(() => []),
+  intent: z.enum(["schedule", "cancel", "unknown"]).optional(),
+  professionalId: z.number().optional(),
+  professionalName: z.string().optional(),
+  dateTime: z.string().optional(),
+  patientName: z.string().optional(),
+  reason: z.string().optional(),
+  actionSuccess: z.boolean().optional(),
+  actionError: z.string().optional(),
+});
+
+export type GraphState = z.infer<typeof GraphStateSchema>;
+```
+
+Diferente do módulo 2 (`Annotation.Root`, por causa da versão pinada da lib naquele projeto), aqui o estado é definido **exatamente como o tutorial ensina** — um `z.object({...})` comum, passado direto para `new StateGraph(...)`. Isso só funciona porque este projeto usa uma versão atual do `@langchain/langgraph`, que já tem suporte nativo a Zod.
+
+```typescript
+export function buildGraph(llmClient: OpenRouterService, appointmentService: AppointmentService) {
+  const workflow = new StateGraph(GraphStateSchema)
+    .addNode("identifyIntent", createIdentifyIntentNode(llmClient))
+    .addNode("scheduleNode", createScheduleNode(appointmentService))
+    .addNode("cancelNode", createCancelNode(appointmentService))
+    .addNode("messageGeneratorNode", createMessageGeneratorNode(llmClient))
+    .addEdge(START, "identifyIntent")
+    .addConditionalEdges("identifyIntent", routeByIntent, {
+      scheduleNode: "scheduleNode",
+      cancelNode: "cancelNode",
+      messageGeneratorNode: "messageGeneratorNode",
+    })
+    .addEdge("scheduleNode", "messageGeneratorNode")
+    .addEdge("cancelNode", "messageGeneratorNode")
+    .addEdge("messageGeneratorNode", END);
+
+  return workflow.compile();
+}
+```
+
+- **`buildGraph(llmClient, appointmentService)`**: diferente do módulo 2 (`buildGraph()`, sem argumentos), aqui a fábrica **recebe as dependências de fora** — quem monta o grafo (`factory.ts` para o Studio, os testes) decide quais instâncias usar.
+- Só `identifyIntent` e `messageGeneratorNode` recebem `llmClient` — são os únicos dois nós que efetivamente **chamam a IA**. `scheduleNode` e `cancelNode` recebem só `appointmentService` — cada nó só conhece a dependência que realmente precisa.
+- Tanto `scheduleNode` quanto `cancelNode` convergem para `messageGeneratorNode` — não importa qual ação foi executada (ou se falhou), a etapa final é sempre a mesma.
+
+## `src/server.ts` — a rota HTTP `/chat`
+
+```typescript
+export function createServer(graph: CompiledStateGraph<GraphState, Partial<GraphState>, any>) {
+  const app = Fastify();
+  // ...
+  const result = await graph.invoke({
+    messages: [new HumanMessage(question)],
+  });
+
+  reply.send({
+    intent: result.intent,
+    actionSuccess: result.actionSuccess,
+    actionError: result.actionError,
+    message: result.messages.at(-1)?.text ?? "",
+  });
+}
+```
+
+- **`createServer(graph)`**: a diferença mais visível em relação ao módulo 2 — lá, `createServer()` **montava** o grafo internamente; aqui, o grafo já vem **pronto** de fora, como parâmetro. Isso é o que permite ao teste passar um grafo com suas próprias instâncias de serviço, sem duplicar a lógica de montagem.
+- A resposta é um **objeto JSON** com vários campos do estado final, em vez de só uma string — porque agora existe informação útil além do texto: se a ação teve sucesso, qual foi a intenção identificada, e o texto da última mensagem gerada.
+
+## Decisões de projeto que complementam o tutorial
+
+### 1. `.nullable()` além de `.optional()` no `IntentSchema`
+
+O tutorial mostra `IntentSchema` só com `.optional()` nos campos extraídos. Ao rodar o projeto contra a API real do OpenRouter (modo de **structured outputs** estrito), essa combinação falha. Isso não é uma peculiaridade deste projeto — é um requisito documentado da OpenAI para o modo estrito. A correção foi acrescentar `.nullable()` a cada campo opcional do `IntentSchema`, sem mudar nenhuma outra lógica do grafo.
+
+### 2. Dependências atualizadas, em vez de pinadas
+
+Ao contrário do módulo 2 (que manteve versões antigas com vulnerabilidades conhecidas, por serem as versões literalmente citadas pelo tutorial daquela aula), este projeto foi montado direto com as versões mais recentes de `@langchain/langgraph`, `@langchain/openai`, `@langchain/core` e `zod` disponíveis no momento — `npm audit` não acusa nenhuma vulnerabilidade.
+
+## Verifique seu entendimento
+
+1. Por que `ScheduleRequiredSchema` declara os mesmos três campos que `IntentSchema` já validou em `identifyIntentNode`, em vez de confiar que esses dados já chegaram corretos?
+2. Qual é a diferença prática entre `.optional()` sozinho e `.nullable().optional()` num campo de `IntentSchema`?
+3. Por que `identifyIntentNode` e `messageGeneratorNode` recebem `llmClient` como dependência, mas `scheduleNode` e `cancelNode` recebem `appointmentService`?
+4. O que `withStructuredOutput(schema)` evita que você teria que fazer manualmente se estivesse só pedindo "responda em JSON" no prompt?
+</script>
+
+<script>
+const LESSONS = [
+  {
+    "id": "01-artigo",
+    "file": "01-artigo-json-estruturado-e-agentes.md",
+    "aula": 1,
+    "tipo": "artigo",
+    "title": "Transformando linguagem natural em JSON estruturado",
+    "label": "JSON estruturado e agentes"
+  },
+  {
+    "id": "01-tutorial",
+    "file": "01-tutorial-agendamento-cancelamento-com-langgraph.md",
+    "aula": 1,
+    "tipo": "tutorial",
+    "title": "Tutorial: agendamento e cancelamento de consultas com output estruturado",
+    "label": "Agendamento e cancelamento com LangGraph"
+  },
+  {
+    "id": "02-anotacao",
+    "file": "02-anotacao-projeto-agendamento-cancelamento.md",
+    "aula": 2,
+    "tipo": "anotacao",
+    "title": "Anotação: explicação linha a linha do projeto do módulo 3",
+    "label": "Explicação linha a linha do projeto"
+  },
+  {
+    "id": "03-quiz",
+    "file": "03-quiz-revisao-modulo03.md",
+    "aula": 3,
+    "tipo": "quiz",
+    "title": "Quiz de revisão — Módulo 3",
+    "label": "Quiz de revisão"
+  }
+];
+const FILE_TO_ID = {
+  "01-artigo-json-estruturado-e-agentes.md": "01-artigo",
+  "01-tutorial-agendamento-cancelamento-com-langgraph.md": "01-tutorial",
+  "02-anotacao-projeto-agendamento-cancelamento.md": "02-anotacao",
+  "03-quiz-revisao-modulo03.md": "03-quiz"
+};
+
+const STATIONS = [1, 2, 3].map((aula) => ({
+  aula,
+  docs: LESSONS.filter((l) => l.aula === aula),
+}));
+
+// Mapas por tipo de documento — evitam um `if/else` crescente à medida que
+// novas estações (anotação, quiz, ...) são adicionadas depois do par artigo/tutorial.
+const STATION_EYEBROW = {
+  artigo: "Aulas 1-4",
+  tutorial: "Aulas 1-4",
+  anotacao: "Anotação final",
+  quiz: "Revisão",
+};
+const TIPO_LABEL = {
+  artigo: "conceito",
+  tutorial: "mão na massa",
+  anotacao: "explicação de código",
+  quiz: "quiz interativo",
+};
+const TIPO_TAG = { artigo: "Artigo", tutorial: "Tutorial", anotacao: "Anotação", quiz: "Quiz" };
+const DOT_LABEL = { artigo: "1-4", tutorial: "1-4", anotacao: "★", quiz: "?" };
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function inline(text) {
+  let t = escapeHtml(text);
+  t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+  t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, href) => {
+    const targetId = FILE_TO_ID[href];
+    if (targetId) {
+      return '<button type="button" class="inline-link" data-nav="' + targetId + '">' + label + "</button>";
+    }
+    return label;
+  });
+  return t;
+}
+
+function renderTable(headerLine, bodyLines) {
+  const splitRow = (line) =>
+    line
+      .split("|")
+      .map((s) => s.trim())
+      .filter((s, idx, arr) => !(idx === 0 && s === "") && !(idx === arr.length - 1 && s === ""));
+  const header = splitRow(headerLine);
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  header.forEach((h) => (html += "<th>" + inline(h) + "</th>"));
+  html += "</tr></thead><tbody>";
+  bodyLines.forEach((line) => {
+    const cells = splitRow(line);
+    html += "<tr>";
+    cells.forEach((c) => (html += "<td>" + inline(c) + "</td>"));
+    html += "</tr>";
+  });
+  html += "</tbody></table></div>";
+  return html;
+}
+
+function buildList(items) {
+  let idx = 0;
+  function parseLevel(indent) {
+    let out = "";
+    let type = "ul";
+    while (idx < items.length && items[idx].indent >= indent) {
+      const item = items[idx];
+      type = item.ordered ? "ol" : "ul";
+      idx++;
+      let child = "";
+      if (idx < items.length && items[idx].indent > indent) {
+        child = parseLevel(items[idx].indent);
+      }
+      out += "<li>" + inline(item.text) + child + "</li>";
+    }
+    return "<" + type + ">" + out + "</" + type + ">";
+  }
+  return parseLevel(items[0] ? items[0].indent : 0);
+}
+
+function isTableSeparator(line) {
+  return /^\s*\|?[\s:-]+\|[\s:|-]*$/.test(line) && line.includes("-");
+}
+
+// ---------- Syntax highlighting dos blocos de código: paleta Dracula ----------
+const JS_KEYWORDS = new Set([
+  "import", "export", "default", "from", "as", "const", "let", "var", "function",
+  "return", "if", "else", "for", "while", "do", "switch", "case", "break", "continue",
+  "async", "await", "new", "type", "interface", "class", "extends", "implements",
+  "typeof", "instanceof", "in", "of", "this", "super", "static", "public", "private",
+  "protected", "readonly", "enum", "void", "throw", "try", "catch", "finally", "yield",
+  "delete", "true", "false", "null", "undefined",
+]);
+
+function highlightCode(code) {
+  // O grupo de pontuação exclui aspas/backtick de propósito: sem essa exclusão,
+  // ele "engolia" a aspa de abertura de uma string antes do grupo de string
+  // conseguir tentar casar a partir dali, quebrando o highlight de strings.
+  const tokenRegex =
+    /(\/\/[^\n]*)|(\/\*[\s\S]*?\*\/)|(`(?:\\.|[^`\\])*`)|("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][A-Za-z0-9_$]*)|(\s+)|([^\sA-Za-z0-9_$'"`]+)|(.)/g;
+  let out = "";
+  let m;
+  while ((m = tokenRegex.exec(code))) {
+    if (m[1] || m[2]) {
+      out += '<span class="tok-comment">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[3] || m[4] || m[5]) {
+      out += '<span class="tok-string">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[6]) {
+      out += '<span class="tok-number">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[7]) {
+      const word = m[0];
+      if (JS_KEYWORDS.has(word)) {
+        out += '<span class="tok-keyword">' + escapeHtml(word) + "</span>";
+      } else if (/^[A-Z]/.test(word)) {
+        out += '<span class="tok-type">' + escapeHtml(word) + "</span>";
+      } else if (/^\s*\(/.test(code.slice(tokenRegex.lastIndex))) {
+        out += '<span class="tok-func">' + escapeHtml(word) + "</span>";
+      } else {
+        out += escapeHtml(word);
+      }
+    } else {
+      out += escapeHtml(m[0]);
+    }
+  }
+  return out;
+}
+
+function parseMarkdown(md) {
+  const lines = md.split("\n");
+  let html = "";
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (/^\s*$/.test(line)) {
+      i++;
+      continue;
+    }
+
+    const fence = line.match(/^```(\w*)/);
+    if (fence) {
+      const lang = fence[1] || "texto";
+      const codeLines = [];
+      i++;
+      while (i < lines.length && !/^```/.test(lines[i])) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      i++;
+      html +=
+        '<div class="code-card"><div class="code-lang">' +
+        escapeHtml(lang) +
+        "</div><pre><code>" +
+        highlightCode(codeLines.join("\n")) +
+        "</code></pre></div>";
+      continue;
+    }
+
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if (h) {
+      const level = h[1].length;
+      html += "<h" + level + ">" + inline(h[2]) + "</h" + level + ">";
+      i++;
+      continue;
+    }
+
+    if (/^-{3,}\s*$/.test(line)) {
+      html += "<hr>";
+      i++;
+      continue;
+    }
+
+    if (/^>\s?/.test(line)) {
+      const qLines = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        qLines.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      html += "<blockquote>" + parseMarkdown(qLines.join("\n")) + "</blockquote>";
+      continue;
+    }
+
+    if (line.includes("|") && lines[i + 1] && isTableSeparator(lines[i + 1])) {
+      const headerLine = line;
+      const bodyLines = [];
+      i += 2;
+      while (i < lines.length && lines[i].includes("|") && lines[i].trim() !== "") {
+        bodyLines.push(lines[i]);
+        i++;
+      }
+      html += renderTable(headerLine, bodyLines);
+      continue;
+    }
+
+    if (/^\s*(-\s+|\d+\.\s+)/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*(-\s+|\d+\.\s+)/.test(lines[i])) {
+        const m = lines[i].match(/^(\s*)(-\s+|(\d+)\.\s+)(.*)$/);
+        items.push({ indent: m[1].length, ordered: !!m[3], text: m[4] });
+        i++;
+      }
+      html += buildList(items);
+      continue;
+    }
+
+    const pLines = [];
+    while (
+      i < lines.length &&
+      lines[i].trim() !== "" &&
+      !/^(#{1,4}\s|```|>\s?|-{3,}\s*$|\s*(-\s+|\d+\.\s+))/.test(lines[i])
+    ) {
+      pLines.push(lines[i]);
+      i++;
+    }
+    if (pLines.length) {
+      html += "<p>" + inline(pLines.join(" ")) + "</p>";
+    } else {
+      i++;
+    }
+  }
+  return html;
+}
+
+// ---------- Quiz interativo (03-quiz-revisao-modulo03.md) ----------
+// `correct` é o índice (0=a, 1=b, 2=c, 3=d) da alternativa certa, igual ao gabarito do .md.
+const QUIZ_DATA = [
+  {
+    q: "Qual é a ideia central de \"structured output\" (saída estruturada)?",
+    options: [
+      "Reescrever o prompt em letras maiúsculas, pedindo com mais ênfase que o modelo obedeça as instruções à risca",
+      "Pedir, dentro do texto do prompt, que o modelo devolva só JSON, sem nenhuma validação depois de receber a resposta",
+      "Descrever um schema, por exemplo com Zod, que define os campos esperados, e o modelo devolve dados já validados",
+      "Rodar várias expressões regulares sobre o texto de resposta, tentando isolar cada campo relevante manualmente depois",
+    ],
+    correct: 2,
+  },
+  {
+    q: "O que withStructuredOutput(schema) evita que você tivesse que fazer manualmente?",
+    options: [
+      "Chamar JSON.parse na resposta do modelo e validar esse resultado na mão contra um schema próprio",
+      "Configurar o cliente ChatOpenAI com a chave de API e a URL base do provedor usado na chamada",
+      "Declarar, no arquivo .env, as variáveis de ambiente exigidas antes de subir o servidor Fastify",
+      "Montar as arestas condicionais do grafo LangGraph que decidem qual será o próximo nó a executar",
+    ],
+    correct: 0,
+  },
+  {
+    q: "Por que este módulo troca o SDK nativo do OpenRouter pelo SDK da OpenAI (@langchain/openai), apontando baseURL para o OpenRouter?",
+    options: [
+      "Porque a equipe do OpenRouter descontinuou o próprio SDK e recomendou migrar oficialmente para o da OpenAI",
+      "Porque o OpenRouter passou a exigir, por contrato, que toda integração use exclusivamente bibliotecas da OpenAI",
+      "Porque o SDK da OpenAI oferece um período de uso gratuito bem maior do que o SDK nativo do OpenRouter",
+      "Porque o OpenRouter é compatível com a API da OpenAI, e esse SDK tem suporte mais maduro a output estruturado",
+    ],
+    correct: 3,
+  },
+  {
+    q: "O que são \"few-shot examples\" dentro de um system prompt, e por que o módulo insiste neles?",
+    options: [
+      "Trechos do código-fonte do projeto colados dentro do prompt, para o modelo entender a arquitetura do sistema",
+      "Casos concretos de entrada e saída esperada incluídos no prompt, que ajudam o modelo a acertar o formato certo",
+      "Testes automatizados que rodam antes de cada chamada à IA, conferindo se o schema Zod está correto",
+      "Uma lista de modelos alternativos configurada para o OpenRouter tentar automaticamente caso o modelo principal escolhido falhe na chamada",
+    ],
+    correct: 1,
+  },
+  {
+    q: "O schema IntentSchema usa .nullable().optional() em vários campos, em vez de só .optional(). Por quê?",
+    options: [
+      "Porque .nullable() deixa o código mais elegante de se ler, sem nenhum efeito no comportamento em tempo de execução",
+      "Porque o TypeScript, ao compilar um z.object, passou a exigir que todo campo opcional seja também nullable",
+      "Porque a API, em modo de output estruturado estrito, exige todo campo como obrigatório — null simula \"opcional\"",
+      "Porque GraphStateSchema, que descreve o estado do grafo inteiro, também declara esses mesmos campos como nullable",
+    ],
+    correct: 2,
+  },
+  {
+    q: "Qual é o papel do node identifyIntent?",
+    options: [
+      "Chamar a IA para extrair a intenção do texto do cliente e os dados relevantes, devolvendo isso como estado parcial",
+      "Executar diretamente o agendamento ou cancelamento da consulta contra o banco de dados, sem passar por nenhuma etapa de validação",
+      "Montar a mensagem final de resposta que será enviada de volta ao cliente pela rota HTTP",
+      "Verificar, a cada requisição recebida, se a chave de API configurada em config.ts ainda é válida",
+    ],
+    correct: 0,
+  },
+  {
+    q: "Se a chamada de IA dentro de identifyIntentNode falhar (erro de rede, autenticação, etc.), o que o node faz?",
+    options: [
+      "Deixa a exceção propagar sem tratamento, derrubando a requisição HTTP inteira com um erro 500",
+      "Trava o processo do servidor Fastify até que alguém reinicie a aplicação manualmente depois",
+      "Tenta chamar a IA de novo, em loop infinito, até obter uma resposta válida ou esgotar a memória",
+      "Captura o erro e devolve intent: \"unknown\" com o erro em actionError, seguindo o fluxo até um fallback",
+    ],
+    correct: 3,
+  },
+  {
+    q: "Por que scheduleNode revalida os dados (professionalId, dateTime, patientName) com seu próprio schema Zod, mesmo que identifyIntentNode já os tenha extraído e validado?",
+    options: [
+      "Porque o Zod, por padrão, sempre exige que todo campo obrigatório seja validado duas vezes em nodes diferentes do fluxo",
+      "Segue o princípio \"confio, mas confiro\": cada node trata a etapa anterior como não confiável, revalidando por conta própria",
+      "Porque IntentSchema e ScheduleRequiredSchema descrevem, na prática, exatamente os mesmos campos e regras de negócio",
+      "Porque isso é apenas um resquício de código deixado pelo tutorial original, sem necessidade real hoje",
+    ],
+    correct: 1,
+  },
+  {
+    q: "O que acontece quando appointmentService.bookAppointment encontra um horário já ocupado para o mesmo profissional?",
+    options: [
+      "O novo agendamento sobrescreve, sem aviso nenhum, o horário que já estava reservado para outro paciente",
+      "O sistema agenda mesmo assim, deixando os dois compromissos duplicados na mesma lista de consultas",
+      "Lança uma exceção, capturada pelo scheduleNode, que devolve actionSuccess: false com a mensagem de erro explicando o motivo",
+      "Encerra por completo o processo do servidor Node, exigindo que toda a aplicação seja reiniciada manualmente em seguida",
+    ],
+    correct: 2,
+  },
+  {
+    q: "Qual é o papel do node messageGeneratorNode?",
+    options: [
+      "Chamar a IA de novo para transformar o resultado técnico numa mensagem amigável, e adicioná-la ao histórico",
+      "Identificar a intenção do cliente a partir da última mensagem recebida no histórico da conversa",
+      "Validar, antes de agendar de fato, se os dados extraídos atendem aos requisitos do ScheduleRequiredSchema definido previamente",
+      "Consultar a lista de profissionais disponíveis para sugerir horários alternativos livres ao cliente",
+    ],
+    correct: 0,
+  },
+  {
+    q: "Por que identifyIntentNode e messageGeneratorNode recebem llmClient como dependência, mas scheduleNode e cancelNode não?",
+    options: [
+      "Porque scheduleNode e cancelNode ainda não foram atualizados para a versão mais recente do projeto",
+      "Não há diferença real de comportamento entre os quatro nodes do grafo, é apenas uma escolha pessoal de estilo de código",
+      "Porque llmClient só pode ser instanciado uma única vez durante toda a execução do processo",
+      "Porque só os dois primeiros de fato chamam a IA — os outros só processam dados e chamam o serviço",
+    ],
+    correct: 3,
+  },
+  {
+    q: "Como as dependências (OpenRouterService, AppointmentService) chegam até buildGraph?",
+    options: [
+      "São instanciadas individualmente dentro de cada node, na primeira vez em que ele é executado",
+      "São recebidas como parâmetros de buildGraph(llmClient, appointmentService) — quem monta o grafo decide as instâncias",
+      "São lidas diretamente das variáveis de ambiente do arquivo .env dentro do próprio graph.ts",
+      "São expostas como variáveis globais, importadas de um único arquivo central de configuração do projeto",
+    ],
+    correct: 1,
+  },
+  {
+    q: "O que o método generateStructured de OpenRouterService devolve, em vez de deixar uma exceção \"vazar\"?",
+    options: [
+      "Sempre undefined, tanto em caso de sucesso quanto em caso de erro na chamada à IA",
+      "Um código de status HTTP qualquer, equivalente ao que a própria API da OpenAI sempre retornaria diretamente sem tratamento algum",
+      "Um objeto com { success, data } ou { success, error }, obrigando quem chama a tratar os dois casos",
+      "Uma string já formatada em HTML, pronta para ser exibida direto numa página do navegador do cliente",
+    ],
+    correct: 2,
+  },
+  {
+    q: "Qual é a diferença entre createServer neste módulo e no módulo anterior?",
+    options: [
+      "Aqui createServer(graph) recebe o grafo já montado como parâmetro, em vez de montá-lo internamente",
+      "Não há nenhuma diferença de assinatura ou de comportamento entre as duas versões da função",
+      "Aqui createServer deixou de aceitar qualquer argumento, montando tudo de forma implícita por dentro",
+      "Aqui createServer virou uma classe instanciável com new, em vez de uma função fábrica comum",
+    ],
+    correct: 0,
+  },
+  {
+    q: "O que routeByIntent faz quando state.intent é \"unknown\" (ou ainda não foi definido)?",
+    options: [
+      "Lança um erro que interrompe imediatamente toda a execução do grafo inteiro, sem gerar nenhuma resposta de fato",
+      "Repete a chamada ao node identifyIntent até que uma intenção válida seja finalmente retornada",
+      "Cancela automaticamente a consulta mais recente associada ao cliente que enviou a mensagem",
+      "Cai no caso default, roteando para messageGeneratorNode — que gera uma resposta adequada mesmo sem ação nenhuma",
+    ],
+    correct: 3,
+  },
+];
+
+function renderQuiz() {
+  const container = document.getElementById("content");
+  container.innerHTML = "";
+
+  const intro = document.createElement("p");
+  intro.className = "quiz-intro";
+  intro.textContent =
+    "Responda as " + QUIZ_DATA.length + " perguntas — a correção aparece assim que você marca uma alternativa.";
+  container.appendChild(intro);
+
+  const scoreBar = document.createElement("div");
+  scoreBar.className = "quiz-score-bar";
+  const scoreEl = document.createElement("div");
+  scoreEl.className = "quiz-score";
+  scoreEl.id = "quiz-score";
+  scoreBar.appendChild(scoreEl);
+  container.appendChild(scoreBar);
+
+  const wrap = document.createElement("div");
+  wrap.className = "quiz-wrap";
+
+  function updateScore() {
+    let correctCount = 0;
+    let answeredCount = 0;
+    QUIZ_DATA.forEach((item, qIdx) => {
+      const selected = wrap.querySelector('input[name="quiz-q' + qIdx + '"]:checked');
+      if (!selected) return;
+      answeredCount++;
+      if (Number(selected.value) === item.correct) correctCount++;
+    });
+    scoreEl.textContent =
+      "Nota atual: " + correctCount + " de " + QUIZ_DATA.length + " corretas" +
+      (answeredCount < QUIZ_DATA.length ? " (" + answeredCount + "/" + QUIZ_DATA.length + " respondidas)" : "") +
+      ".";
+  }
+
+  QUIZ_DATA.forEach((item, qIdx) => {
+    const qEl = document.createElement("div");
+    qEl.className = "quiz-question";
+
+    const qText = document.createElement("div");
+    qText.className = "quiz-q-text";
+    qText.textContent = qIdx + 1 + ". " + item.q;
+    qEl.appendChild(qText);
+
+    const optsEl = document.createElement("div");
+    optsEl.className = "quiz-options";
+
+    const feedback = document.createElement("div");
+    feedback.className = "quiz-feedback";
+    feedback.id = "quiz-feedback-" + qIdx;
+
+    item.options.forEach((opt, oIdx) => {
+      const label = document.createElement("label");
+      label.className = "quiz-option";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = "quiz-q" + qIdx;
+      input.value = String(oIdx);
+      const span = document.createElement("span");
+      span.textContent = String.fromCharCode(97 + oIdx) + ") " + opt;
+      label.appendChild(input);
+      label.appendChild(span);
+      optsEl.appendChild(label);
+
+      input.addEventListener("change", () => {
+        // Assim que uma alternativa é marcada, revela na hora qual era a
+        // certa (verde) e, se o usuário errou, destaca a que ele marcou (vermelho).
+        optsEl.querySelectorAll(".quiz-option").forEach((optionLabel) => {
+          optionLabel.classList.remove("is-correct", "is-wrong");
+        });
+        optsEl.querySelectorAll("input").forEach((otherInput) => {
+          if (Number(otherInput.value) === item.correct) {
+            otherInput.closest(".quiz-option").classList.add("is-correct");
+          }
+        });
+
+        if (oIdx === item.correct) {
+          feedback.textContent = "Certo!";
+          feedback.className = "quiz-feedback is-correct-text";
+        } else {
+          label.classList.add("is-wrong");
+          feedback.textContent =
+            "Errado — a resposta certa é a " + String.fromCharCode(97 + item.correct) + ").";
+          feedback.className = "quiz-feedback is-wrong-text";
+        }
+        updateScore();
+      });
+    });
+
+    qEl.appendChild(optsEl);
+    qEl.appendChild(feedback);
+    wrap.appendChild(qEl);
+  });
+
+  updateScore();
+  container.appendChild(wrap);
+}
+
+const PROGRESS_KEY = "modulo03-agendamento-progress";
+function loadProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function saveProgress(p) {
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+}
+let progress = loadProgress();
+
+const FLAT_ORDER = LESSONS.map((l) => l.id);
+let currentId = FLAT_ORDER[0];
+let lastTipoPerAula = {};
+
+function renderRoute() {
+  const routeEl = document.getElementById("route");
+  routeEl.innerHTML = "";
+  STATIONS.forEach((station, idx) => {
+    const total = station.docs.length;
+    const doneCount = station.docs.filter((d) => progress[d.id]).length;
+    const visited = doneCount === total;
+    const partial = doneCount > 0 && doneCount < total;
+
+    const wrap = document.createElement("div");
+    wrap.className = "relative flex gap-3.5 py-0.5 pl-1";
+
+    if (idx < STATIONS.length - 1) {
+      const lineEl = document.createElement("div");
+      lineEl.className =
+        "absolute left-[15px] top-[26px] bottom-[-3px] w-0.5 " +
+        (visited ? "bg-[var(--accent-route)]" : "bg-[var(--line)]");
+      wrap.appendChild(lineEl);
+    }
+
+    const dot = document.createElement("div");
+    dot.className =
+      "flex-none w-6 h-6 rounded-full border-2 grid place-items-center font-mono text-[0.65rem] z-10 transition-colors " +
+      (visited
+        ? "border-[var(--accent-route)] bg-[var(--accent-route)] text-[var(--bg)]"
+        : partial
+        ? "border-[var(--accent-route)] text-[var(--ink-faint)] bg-[conic-gradient(var(--accent-route)_0_50%,transparent_50%_100%)]"
+        : "border-[var(--line)] bg-[var(--bg)] text-[var(--ink-faint)]");
+    dot.textContent = DOT_LABEL[station.docs[0].tipo];
+    wrap.appendChild(dot);
+
+    const btn = document.createElement("button");
+    const activeDoc = station.docs.find((d) => d.id === currentId);
+    btn.className =
+      "flex-1 text-left px-2 pt-1 pb-3 rounded-lg transition-colors " +
+      (activeDoc ? "text-[var(--ink)]" : "text-[var(--ink-soft)] hover:text-[var(--ink)]");
+    const first = station.docs[0];
+    btn.innerHTML =
+      '<div class="font-mono text-[0.62rem] tracking-[0.08em] uppercase text-[var(--ink-faint)]">' +
+      STATION_EYEBROW[first.tipo] +
+      '</div><div class="text-[0.88rem] leading-snug mt-0.5' +
+      (activeDoc ? " font-semibold" : "") +
+      '">' +
+      escapeHtml(first.label) +
+      "</div>";
+    btn.addEventListener("click", () => {
+      const aulaState = lastTipoPerAula[station.aula];
+      const target = station.docs.find((d) => d.tipo === aulaState) || first;
+      navigateTo(target.id);
+    });
+    wrap.appendChild(btn);
+    routeEl.appendChild(wrap);
+  });
+}
+
+const TIPO_COLORS = {
+  artigo: "bg-[var(--accent-artigo-soft)] text-[var(--accent-artigo)]",
+  tutorial: "bg-[var(--accent-tutorial-soft)] text-[var(--accent-tutorial)]",
+  anotacao: "bg-[var(--accent-route-soft)] text-[var(--accent-route)]",
+  quiz: "bg-[var(--accent-quiz-soft)] text-[var(--accent-quiz)]",
+};
+
+function renderTypeToggle(doc) {
+  const wrap = document.getElementById("typeToggleWrap");
+  const siblings = LESSONS.filter((l) => l.aula === doc.aula);
+  if (siblings.length < 2) {
+    wrap.innerHTML = "";
+    return;
+  }
+  const toggle = document.createElement("div");
+  toggle.className = "inline-flex gap-1.5 p-1 rounded-full mb-7 bg-[var(--bg-elevated)]";
+  siblings.forEach((s) => {
+    const btn = document.createElement("button");
+    const active = s.id === doc.id;
+    btn.className =
+      "px-4 py-1.5 rounded-full text-[0.82rem] font-semibold transition-colors " +
+      (active ? TIPO_COLORS[s.tipo] : "text-[var(--ink-soft)]");
+    btn.textContent = s.tipo === "artigo" ? "Conceito" : "Mão na massa";
+    btn.addEventListener("click", () => navigateTo(s.id));
+    toggle.appendChild(btn);
+  });
+  wrap.innerHTML = "";
+  wrap.appendChild(toggle);
+}
+
+function renderLesson(id) {
+  const doc = LESSONS.find((l) => l.id === id);
+  if (!doc) return;
+  currentId = id;
+  lastTipoPerAula[doc.aula] = doc.tipo;
+
+  document.getElementById("lessonEyebrow").textContent =
+    STATION_EYEBROW[doc.tipo] + " · " + TIPO_LABEL[doc.tipo];
+  document.getElementById("lessonTitle").textContent = doc.title;
+
+  const tagEl = document.getElementById("docTag");
+  tagEl.className =
+    "inline-block font-mono text-[0.68rem] tracking-[0.06em] uppercase px-2 py-0.5 rounded-md mb-5 " +
+    TIPO_COLORS[doc.tipo];
+  tagEl.textContent = TIPO_TAG[doc.tipo];
+
+  renderTypeToggle(doc);
+
+  if (doc.tipo === "quiz") {
+    renderQuiz();
+  } else {
+    const raw = document.getElementById("doc-" + id).textContent;
+    document.getElementById("content").innerHTML = parseMarkdown(raw);
+  }
+
+  const markDone = document.getElementById("markDone");
+  markDone.checked = !!progress[id];
+  document.getElementById("markDoneLabel").textContent = progress[id]
+    ? "Concluído"
+    : "Marcar como concluído";
+
+  const idx = FLAT_ORDER.indexOf(id);
+  document.getElementById("prevBtn").disabled = idx <= 0;
+  document.getElementById("nextBtn").disabled = idx >= FLAT_ORDER.length - 1;
+
+  renderRoute();
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+}
+
+function navigateTo(id) {
+  renderLesson(id);
+}
+
+document.getElementById("markDone").addEventListener("change", (e) => {
+  progress[currentId] = e.target.checked;
+  saveProgress(progress);
+  renderLesson(currentId);
+});
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+  const idx = FLAT_ORDER.indexOf(currentId);
+  if (idx > 0) navigateTo(FLAT_ORDER[idx - 1]);
+});
+document.getElementById("nextBtn").addEventListener("click", () => {
+  const idx = FLAT_ORDER.indexOf(currentId);
+  if (idx < FLAT_ORDER.length - 1) navigateTo(FLAT_ORDER[idx + 1]);
+});
+
+document.getElementById("content").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-nav]");
+  if (btn) navigateTo(btn.dataset.nav);
+});
+
+renderLesson(currentId);
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+node_modules
+.env
+
+# LangGraph API
+.langgraph_api
+
+# Banco SQLite local de preferências (mantém a pasta, ignora o arquivo)
+data/*.db
+data/*.db-journal

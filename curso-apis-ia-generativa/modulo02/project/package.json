@@ -1,0 +1,22 @@
+{
+  "name": "modulo02-langgraph",
+  "version": "1.0.0",
+  "description": "Grafo LangGraph com roteamento condicional (modulo 02 do curso APIs de IA Generativa)",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file .env --watch src/index.ts",
+    "test:dev": "node --env-file .env --test tests/**/*.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/langgraph": "^0.2.17",
+    "fastify": "^5.10.0",
+    "langchain": "^0.1.19"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3"
+  }
+}

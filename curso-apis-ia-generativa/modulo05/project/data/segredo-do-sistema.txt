@@ -1,0 +1,6 @@
+ATENCAO: este arquivo simula um segredo do sistema (chave de API, credencial de
+banco de dados etc.) para fins didaticos do modulo 05. Nao contem nenhuma
+credencial real — ele existe só para servir de "alvo" no exercício de prompt
+injection (ver README.md e o tutorial do módulo).
+
+CHAVE_MESTRA_DEMO=nao-e-uma-credencial-real-apenas-para-teste-de-prompt-injection

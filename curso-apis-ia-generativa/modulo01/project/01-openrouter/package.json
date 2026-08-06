@@ -1,0 +1,21 @@
+{
+  "name": "01-openrouter",
+  "version": "1.0.0",
+  "description": "Smart Model Router Gateway - API Fastify integrada ao OpenRouter (modulo 01 do curso APIs de IA Generativa)",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file .env --watch src/index.ts",
+    "test": "node --env-file .env --test tests/**/*.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fastify": "^5.10.0",
+    "openai": "^6.48.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3"
+  }
+}

@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Funções de Ativação — Módulo 01</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: { ink: '#1a1a2e', surface: '#faf9f7' },
+          boxShadow: {
+            'brut':    '3px 3px 0 #1a1a2e',
+            'brut-sm': '2px 2px 0 #1a1a2e',
+            'brut-lg': '5px 5px 0 #1a1a2e',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* inherit from other pages */
+    .doc-section { scroll-margin-top:80px; }
+    .toc-link { display:flex; align-items:center; min-height:44px; padding:.35rem .6rem; font-size:.8rem; font-weight:500; color:#666; text-decoration:none; border-left:3px solid transparent; transition:color 100ms,border-color 100ms,background 100ms; }
+    .toc-link:hover { color:#1a1a2e; background:#fef3c7; border-left-color:#fbbf24; }
+    .toc-link:focus-visible { outline:3px solid #fbbf24; outline-offset:-3px; color:#1a1a2e; }
+    .toc-link.active { color:#1a1a2e; background:#fef3c7; border-left-color:#fbbf24; font-weight:700; }
+    .toc-sub { padding-left:1.25rem; font-size:.75rem; }
+    pre { background:#1a1a2e; color:#e2e8f0; border:2px solid #1a1a2e; box-shadow:3px 3px 0 #1a1a2e; padding:1rem 1.5rem; font-family:'JetBrains Mono',monospace; font-size:.82rem; line-height:1.7; overflow-x:auto; margin:.75rem 0; }
+    p code, li code { font-family:'JetBrains Mono',monospace; font-size:.82em; background:#f3f4f6; border:1px solid #e5e7eb; padding:1px 5px; }
+    .doc-table { width:100%; border-collapse:collapse; border:2px solid #1a1a2e; box-shadow:3px 3px 0 #1a1a2e; }
+    .doc-table th { background:#1a1a2e; color:#fff; padding:.6rem 1rem; font-size:.82rem; font-weight:700; text-align:left; }
+    .doc-table td { padding:.6rem 1rem; font-size:.83rem; border-top:1px solid #e5e7eb; }
+    .doc-table tr:nth-child(even) td { background:#fefce8; }
+    .callout { border:2px solid #1a1a2e; padding:.75rem 1rem .75rem 1.25rem; box-shadow:2px 2px 0 #1a1a2e; font-size:.875rem; line-height:1.65; margin:.75rem 0; }
+    .callout-warning { background:#fff1f2; border-left:5px solid #f43f5e; }
+    .callout-amber { background:#fef3c7; border-left:5px solid #fbbf24; }
+    .callout-info { background:#eff6ff; border-left:5px solid #3b82f6; }
+    .callout-label { font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; display:block; margin-bottom:.35rem; }
+    .callout-warning .callout-label { color:#be123c; }
+    .callout-amber .callout-label { color:#92400e; }
+    .callout-info .callout-label { color:#1d4ed8; }
+    .range-pill { display:inline-flex; align-items:center; gap:.35rem; font-size:.72rem; font-weight:700; font-family:'JetBrains Mono',monospace; padding:.2rem .65rem; border:2px solid #1a1a2e; background:#fff; box-shadow:2px 2px 0 #1a1a2e; }
+    .io-map { display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; font-family:'JetBrains Mono',monospace; font-size:.82rem; margin:.75rem 0; }
+    .io-row { display:flex; align-items:center; gap:.4rem; }
+    .io-in { background:#f3f4f6; border:1px solid #e5e7eb; padding:2px 8px; }
+    .io-arr { color:#fbbf24; font-weight:800; }
+    .io-out { padding:2px 8px; font-weight:700; border:2px solid #1a1a2e; }
+    .io-out.pos { background:#dcfce7; }
+    .io-out.mid { background:#fef9c3; }
+    .io-out.neg { background:#fee2e2; }
+    .mini-curve-wrap { border:2px solid #1a1a2e; background:#fff; box-shadow:2px 2px 0 #1a1a2e; padding:6px; display:inline-block; }
+    .fn-grid { display:grid; grid-template-columns:140px 1fr; gap:1.25rem; align-items:start; margin-bottom:1rem; }
+    @media(max-width:640px){ .fn-grid { grid-template-columns:1fr; } }
+    /* flowchart */
+    .fc-wrap { display:flex; flex-direction:column; align-items:center; gap:0; }
+    .fc-terminal { background:#1a1a2e; color:#fff; border:2px solid #1a1a2e; padding:.4rem 1.5rem; font-size:.8rem; font-weight:700; font-family:'JetBrains Mono',monospace; border-radius:999px; box-shadow:3px 3px 0 #1a1a2e; }
+    .fc-process  { background:#fff; border:2px solid #1a1a2e; padding:.5rem 1.25rem; font-size:.82rem; font-weight:600; font-family:'JetBrains Mono',monospace; text-align:center; box-shadow:3px 3px 0 #1a1a2e; min-width:180px; }
+    .fc-process.accent { background:#fef3c7; border-left:5px solid #fbbf24; }
+    .fc-diamond-wrap { position:relative; width:200px; height:90px; display:flex; align-items:center; justify-content:center; }
+    .fc-diamond-label { position:absolute; z-index:1; font-size:.72rem; font-weight:700; font-family:'JetBrains Mono',monospace; text-align:center; line-height:1.3; color:#1a1a2e; padding:0 1rem; }
+    .fc-arrow { color:#fbbf24; font-size:1.1rem; font-weight:800; line-height:1; padding:.1rem 0; text-align:center; }
+    .fc-arrow-label { display:flex; align-items:center; justify-content:center; gap:.5rem; font-size:.72rem; font-weight:600; color:#888; }
+    .fc-branch { display:flex; gap:2rem; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+    .fc-branch-col { display:flex; flex-direction:column; align-items:center; gap:0; }
+    .fc-branch-label { font-size:.68rem; font-weight:700; color:#888; font-family:'JetBrains Mono',monospace; margin-bottom:.25rem; }
+    /* ── tooltip ── */
+    .tooltip-wrap { position:relative; display:inline-block; }
+    .tooltip-wrap .tooltip-box { visibility:hidden; opacity:0; position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); background:#1a1a2e; color:#fff; font-size:.72rem; font-weight:500; font-family:'JetBrains Mono',monospace; padding:.35rem .65rem; white-space:nowrap; border:2px solid #1a1a2e; box-shadow:2px 2px 0 rgba(0,0,0,.35); transition:opacity 120ms; pointer-events:none; z-index:999; }
+    .tooltip-wrap .tooltip-box::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:#1a1a2e; }
+    .tooltip-wrap:hover .tooltip-box { visibility:visible; opacity:1; }
+    /* ── back-to-top ── z-index scale: 60=sidebar 100=header 150=tooltip 300=sheet 400=btt */
+    .btt-btn { position:fixed; bottom:1.5rem; right:1.5rem; z-index:400; width:44px; height:44px; background:#1a1a2e; color:#fff; border:2px solid #1a1a2e; box-shadow:3px 3px 0 #fbbf24; display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity 150ms,transform 150ms,box-shadow 100ms; }
+    .btt-btn.visible { opacity:1; pointer-events:auto; transform:translateY(0); }
+    .btt-btn:hover { box-shadow:5px 5px 0 #fbbf24; transform:translate(-1px,-1px); }
+    .btt-btn:focus-visible { outline:3px solid #fbbf24; outline-offset:3px; }
+    @media(prefers-reduced-motion:reduce){ *{ transition:none!important } }
+  </style>
+</head>
+<body class="bg-surface text-ink font-sans leading-relaxed">
+
+<!-- Header -->
+<header class="sticky top-0 z-[100] bg-surface border-b-2 border-ink px-6 h-16 flex items-center gap-4">
+  <a href="../index.html" class="flex items-center gap-1.5 font-extrabold text-[0.95rem] tracking-tight no-underline text-ink whitespace-nowrap">
+    <span class="inline-block bg-ink text-white px-1.5 py-px text-[0.8rem]">IA</span>Docs
+  </a>
+  <span class="text-[#ccc] font-light">/</span>
+  <a href="../index.html" class="text-[0.82rem] text-[#888] no-underline hover:text-ink transition-colors duration-100">Módulo 01</a>
+  <span class="text-[#ccc] font-light">/</span>
+  <span class="text-[0.82rem] font-semibold truncate">Funções de Ativação</span>
+</header>
+
+<!-- Layout -->
+<div class="flex min-h-[calc(100vh-64px)]">
+
+  <!-- TOC Sidebar -->
+  <aside class="w-[220px] shrink-0 sticky top-16 self-start border-r-2 border-ink bg-white overflow-y-auto max-h-[calc(100vh-64px)] py-5" aria-label="Índice do documento">
+    <p class="text-[0.68rem] font-bold uppercase tracking-widest text-[#999] px-3 mb-2">Neste documento</p>
+    <nav id="toc">
+      <a href="#sec-intro"    class="toc-link">Introdução</a>
+      <a href="#sec-relu"     class="toc-link">1. ReLU</a>
+      <a href="#sec-sigmoid"  class="toc-link">2. Sigmoid</a>
+      <a href="#sec-tanh"     class="toc-link">3. Tanh</a>
+      <a href="#sec-softmax"  class="toc-link">4. Softmax</a>
+      <a href="#sec-linear"   class="toc-link">5. Linear</a>
+      <a href="#sec-leaky"    class="toc-link">6. Leaky ReLU</a>
+      <a href="#sec-elu"      class="toc-link">7. ELU</a>
+      <a href="#sec-gelu"     class="toc-link">8. GELU</a>
+      <a href="#sec-tabela"   class="toc-link mt-2">Tabela Comparativa</a>
+      <a href="#sec-escolher" class="toc-link">Como Escolher</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 px-10 py-12 pb-24">
+
+    <!-- Page Title -->
+    <div class="mb-12">
+      <div class="inline-flex items-center gap-1.5 text-[0.72rem] font-bold uppercase tracking-[0.06em] px-2.5 py-[3px] border-2 border-ink shadow-brut-sm mb-3 bg-amber-100">
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>Módulo 01
+      </div>
+      <h1 class="text-[2.1rem] font-extrabold tracking-[-0.03em] leading-[1.15] mb-3">Funções de Ativação</h1>
+      <p class="text-[0.9rem] text-[#555] max-w-[600px] leading-relaxed">
+        Além do ReLU: ReLU, Sigmoid, Tanh, Softmax, Linear, Leaky ReLU, ELU e GELU — cada uma explicada com fórmula, curva, exemplos e analogia.
+      </p>
+    </div>
+
+    <!-- ══════════ INTRO ══════════ -->
+    <section class="doc-section mb-12" id="sec-intro">
+      <p class="text-[0.9rem] leading-relaxed text-[#333] mb-4 max-w-prose">
+        Funções de ativação são regras que cada neurônio aplica na sua saída. Sem elas, a rede neural seria apenas uma multiplicação de matrizes — incapaz de aprender padrões complexos.
+      </p>
+      <div class="callout callout-amber">
+        <span class="callout-label">Analogia geral</span>
+        Cada função é um <strong>porteiro</strong> com uma regra diferente para decidir quem entra e com que intensidade.
+      </div>
+    </section>
+
+    <!-- ══════════ 1. ReLU ══════════ -->
+    <section class="doc-section mb-14" id="sec-relu">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="inline-flex items-center justify-center w-8 h-8 bg-amber-400 border-2 border-ink font-extrabold text-[0.82rem] shadow-brut-sm shrink-0">1</span>
+        <h2 class="text-[1.35rem] font-extrabold tracking-tight">ReLU</h2>
+        <span class="text-[0.72rem] font-bold text-[#999] font-mono">Rectified Linear Unit</span>
+      </div>
+
+      <div class="fn-grid">
+        <div class="flex flex-col items-center gap-2">
+          <div class="mini-curve-wrap">
+            <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true">
+              <line x1="0" y1="30" x2="120" y2="30" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <line x1="60" y1="0" x2="60" y2="60" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <polyline points="0,30 60,30 120,5" fill="none" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>
+              <circle cx="60" cy="30" r="2.5" fill="#fbbf24" stroke="#1a1a2e" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <span class="font-mono text-[.72rem] font-bold text-[#666]">curva ReLU</span>
+        </div>
+        <div>
+          <pre>f(x) = max(0, x)</pre>
+          <div class="flex flex-wrap gap-2 items-center mb-3">
+            <span class="range-pill">
+              <span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;border:2px solid #1a1a2e;display:inline-block"></span>
+              0 a ∞
+            </span>
+          </div>
+          <ul class="text-[0.87rem] space-y-1.5 text-[#333]">
+            <li><strong>Saída:</strong> 0 a ∞ — negativos viram zero, positivos passam direto</li>
+            <li><strong>Uso:</strong> camadas intermediárias (ocultas) — é a mais comum</li>
+            <li><strong>Vantagem:</strong> simples, rápida, converge bem na prática</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-warning">
+        <span class="callout-label">Problema</span>
+        <strong>Neurônio morto</strong> — se um neurônio recebe valores negativos constantemente, o gradiente vira zero e ele para de aprender para sempre.
+      </div>
+    </section>
+
+    <!-- ══════════ 2. Sigmoid ══════════ -->
+    <section class="doc-section mb-14" id="sec-sigmoid">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="inline-flex items-center justify-center w-8 h-8 bg-amber-400 border-2 border-ink font-extrabold text-[0.82rem] shadow-brut-sm shrink-0">2</span>
+        <h2 class="text-[1.35rem] font-extrabold tracking-tight">Sigmoid</h2>
+      </div>
+
+      <div class="fn-grid">
+        <div class="flex flex-col items-center gap-2">
+          <div class="mini-curve-wrap">
+            <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true">
+              <line x1="0" y1="30" x2="120" y2="30" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <line x1="60" y1="0" x2="60" y2="60" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <path d="M 0,53 C 25,53 35,45 60,30 C 85,15 95,7 120,7" fill="none" stroke="#1a1a2e" stroke-width="2"/>
+              <circle cx="60" cy="30" r="2.5" fill="#fbbf24" stroke="#1a1a2e" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <span class="font-mono text-[.72rem] font-bold text-[#666]">curva Sigmoid</span>
+        </div>
+        <div>
+          <pre>f(x) = 1 / (1 + e<sup style="font-size:.65em">-x</sup>)</pre>
+          <div class="flex flex-wrap gap-2 items-center mb-3">
+            <span class="range-pill">
+              <span style="width:8px;height:8px;border-radius:50%;background:#34d399;border:2px solid #1a1a2e;display:inline-block"></span>
+              0 a 1
+            </span>
+          </div>
+          <ul class="text-[0.87rem] space-y-1.5 text-[#333]">
+            <li><strong>Saída:</strong> sempre entre 0 e 1</li>
+            <li><strong>Uso:</strong> camada de <em>saída</em> em problemas de sim/não (binário)</li>
+            <li><strong>Interpretação:</strong> saída = probabilidade de ser a classe positiva</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-amber">
+        <span class="callout-label">Analogia</span>
+        <strong>Dimmer de luz</strong> — qualquer sinal vira uma intensidade entre apagado (0) e totalmente aceso (1).
+      </div>
+
+      <div class="io-map">
+        <div class="io-row"><span class="io-in">-2</span><span class="io-arr">→</span><span class="io-out neg">0.12</span></div>
+        <div class="io-row"><span class="io-in">0</span><span class="io-arr">→</span><span class="io-out mid">0.50</span></div>
+        <div class="io-row"><span class="io-in">2</span><span class="io-arr">→</span><span class="io-out pos">0.88</span></div>
+      </div>
+
+      <div class="callout callout-warning">
+        <span class="callout-label">Problema</span>
+        <strong>Gradiente desvanece</strong> nas camadas do meio — para entradas muito grandes ou muito pequenas, o gradiente fica quase zero e a rede para de aprender.
+      </div>
+    </section>
+
+    <!-- ══════════ 3. Tanh ══════════ -->
+    <section class="doc-section mb-14" id="sec-tanh">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="inline-flex items-center justify-center w-8 h-8 bg-amber-400 border-2 border-ink font-extrabold text-[0.82rem] shadow-brut-sm shrink-0">3</span>
+        <h2 class="text-[1.35rem] font-extrabold tracking-tight">Tanh</h2>
+        <span class="text-[0.72rem] font-bold text-[#999] font-mono">Tangente Hiperbólica</span>
+      </div>
+
+      <div class="fn-grid">
+        <div class="flex flex-col items-center gap-2">
+          <div class="mini-curve-wrap">
+            <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true">
+              <line x1="0" y1="30" x2="120" y2="30" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <line x1="60" y1="0" x2="60" y2="60" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <path d="M 0,55 C 20,55 35,45 60,30 C 85,15 100,5 120,5" fill="none" stroke="#1a1a2e" stroke-width="2"/>
+              <circle cx="60" cy="30" r="2.5" fill="#fbbf24" stroke="#1a1a2e" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <span class="font-mono text-[.72rem] font-bold text-[#666]">curva Tanh</span>
+        </div>
+        <div>
+          <pre>f(x) = (eˣ - e⁻ˣ) / (eˣ + e⁻ˣ)</pre>
+          <div class="flex flex-wrap gap-2 items-center mb-3">
+            <span class="range-pill">
+              <span style="width:8px;height:8px;border-radius:50%;background:#818cf8;border:2px solid #1a1a2e;display:inline-block"></span>
+              −1 a 1
+            </span>
+          </div>
+          <ul class="text-[0.87rem] space-y-1.5 text-[#333]">
+            <li><strong>Saída:</strong> sempre entre -1 e 1</li>
+            <li><strong>Uso:</strong> camadas intermediárias quando valores negativos importam; RNNs e NLP</li>
+            <li><strong>Vantagem sobre Sigmoid:</strong> centrada em zero — facilita o aprendizado</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-amber">
+        <span class="callout-label">Analogia</span>
+        <strong>Balança de dois pratos</strong> — pode pender para negativo (-1) ou positivo (+1), com zero no equilíbrio perfeito.
+      </div>
+
+      <div class="io-map">
+        <div class="io-row"><span class="io-in">-1</span><span class="io-arr">→</span><span class="io-out neg">-0.76</span></div>
+        <div class="io-row"><span class="io-in">0</span><span class="io-arr">→</span><span class="io-out mid">0.00</span></div>
+        <div class="io-row"><span class="io-in">1</span><span class="io-arr">→</span><span class="io-out pos">0.76</span></div>
+      </div>
+    </section>
+
+    <!-- ══════════ 4. Softmax ══════════ -->
+    <section class="doc-section mb-14" id="sec-softmax">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="inline-flex items-center justify-center w-8 h-8 bg-amber-400 border-2 border-ink font-extrabold text-[0.82rem] shadow-brut-sm shrink-0">4</span>
+        <h2 class="text-[1.35rem] font-extrabold tracking-tight">Softmax</h2>
+      </div>
+
+      <div class="fn-grid">
+        <!-- Bar chart instead of curve -->
+        <div class="flex flex-col items-center gap-2">
+          <div class="mini-curve-wrap">
+            <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true">
+              <!-- background grid lines -->
+              <line x1="0" y1="10" x2="120" y2="10" stroke="#f3f4f6" stroke-width="1"/>
+              <line x1="0" y1="30" x2="120" y2="30" stroke="#f3f4f6" stroke-width="1"/>
+              <line x1="0" y1="50" x2="120" y2="50" stroke="#f3f4f6" stroke-width="1"/>
+              <!-- Bar 1: 60% -->
+              <rect x="8" y="14" width="28" height="36" fill="#fbbf24" stroke="#1a1a2e" stroke-width="1.5"/>
+              <!-- Bar 2: 27% -->
+              <rect x="46" y="27" width="28" height="23" fill="#fef9c3" stroke="#1a1a2e" stroke-width="1.5"/>
+              <!-- Bar 3: 13% -->
+              <rect x="84" y="37" width="28" height="13" fill="#f3f4f6" stroke="#1a1a2e" stroke-width="1.5"/>
+              <!-- labels -->
+              <text x="22" y="11" text-anchor="middle" font-size="7" font-family="monospace" fill="#1a1a2e" font-weight="700">60%</text>
+              <text x="60" y="24" text-anchor="middle" font-size="7" font-family="monospace" fill="#1a1a2e" font-weight="700">27%</text>
+              <text x="98" y="34" text-anchor="middle" font-size="7" font-family="monospace" fill="#1a1a2e" font-weight="700">13%</text>
+            </svg>
+          </div>
+          <span class="font-mono text-[.72rem] font-bold text-[#666]">distribuição</span>
+        </div>
+        <div>
+          <pre>f(xᵢ) = eˣⁱ / Σ eˣʲ</pre>
+          <div class="flex flex-wrap gap-2 items-center mb-3">
+            <span class="range-pill">
+              <span style="width:8px;height:8px;border-radius:50%;background:#f472b6;border:2px solid #1a1a2e;display:inline-block"></span>
+              soma = 1
+            </span>
+          </div>
+          <ul class="text-[0.87rem] space-y-1.5 text-[#333]">
+            <li><strong>Saída:</strong> vetor onde todos os valores somam 1 (distribuição de probabilidade)</li>
+            <li><strong>Uso:</strong> camada de <em>saída</em> para múltiplas classes</li>
+            <li><strong>Diferença do Sigmoid:</strong> Sigmoid → "chance de SIM"; Softmax → "dentre todas as opções, qual?"</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-amber">
+        <span class="callout-label">Analogia</span>
+        <strong>Dividir uma pizza inteira</strong> entre as opções — a maior fatia é a classe mais provável. A soma das fatias é sempre 100%.
+      </div>
+
+      <div class="io-map">
+        <div class="io-row">
+          <span class="io-in">[2.0, 1.0, 0.5]</span>
+          <span class="io-arr">→</span>
+          <span class="io-out pos">[0.60, 0.27, 0.13]</span>
+          <span class="text-[.75rem] text-[#888] font-mono ml-1">soma = 1.0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ 5. Linear ══════════ -->
+    <section class="doc-section mb-14" id="sec-linear">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="inline-flex items-center justify-center w-8 h-8 bg-amber-400 border-2 border-ink font-extrabold text-[0.82rem] shadow-brut-sm shrink-0">5</span>
+        <h2 class="text-[1.35rem] font-extrabold tracking-tight">Linear</h2>
+        <span class="text-[0.72rem] font-bold text-[#999] font-mono">sem ativação</span>
+      </div>
+
+      <div class="fn-grid">
+        <div class="flex flex-col items-center gap-2">
+          <div class="mini-curve-wrap">
+            <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true">
+              <line x1="0" y1="30" x2="120" y2="30" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <line x1="60" y1="0" x2="60" y2="60" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <line x1="0" y1="55" x2="120" y2="5" stroke="#1a1a2e" stroke-width="2"/>
+              <circle cx="60" cy="30" r="2.5" fill="#fbbf24" stroke="#1a1a2e" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <span class="font-mono text-[.72rem] font-bold text-[#666]">curva Linear</span>
+        </div>
+        <div>
+          <pre>f(x) = x</pre>
+          <div class="flex flex-wrap gap-2 items-center mb-3">
+            <span class="range-pill">
+              <span style="width:8px;height:8px;border-radius:50%;background:#94a3b8;border:2px solid #1a1a2e;display:inline-block"></span>
+              −∞ a ∞
+            </span>
+          </div>
+          <ul class="text-[0.87rem] space-y-1.5 text-[#333]">
+            <li><strong>Saída:</strong> o próprio valor, sem nenhuma mudança</li>
+            <li><strong>Uso:</strong> camada de <em>saída</em> em regressão — prever números contínuos (preço, temperatura)</li>
+            <li><strong>Quando usar:</strong> quando a saída precisa ser qualquer número real</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-amber">
+        <span class="callout-label">Analogia</span>
+        <strong>Porta aberta</strong> — tudo passa exatamente como chegou, sem filtro, sem transformação.
+      </div>
+    </section>
+
+    <!-- ══════════ 6. Leaky ReLU ══════════ -->
+    <section class="doc-section mb-14" id="sec-leaky">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="inline-flex items-center justify-center w-8 h-8 bg-amber-400 border-2 border-ink font-extrabold text-[0.82rem] shadow-brut-sm shrink-0">6</span>
+        <h2 class="text-[1.35rem] font-extrabold tracking-tight">Leaky ReLU</h2>
+      </div>
+
+      <div class="fn-grid">
+        <div class="flex flex-col items-center gap-2">
+          <div class="mini-curve-wrap">
+            <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true">
+              <line x1="0" y1="30" x2="120" y2="30" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <line x1="60" y1="0" x2="60" y2="60" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <polyline points="0,33 60,30 120,5" fill="none" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>
+              <circle cx="60" cy="30" r="2.5" fill="#fbbf24" stroke="#1a1a2e" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <span class="font-mono text-[.72rem] font-bold text-[#666]">Leaky ReLU</span>
+        </div>
+        <div>
+          <pre>f(x) = x          se x &gt; 0
+f(x) = 0.01 × x   se x ≤ 0</pre>
+          <div class="flex flex-wrap gap-2 items-center mb-3">
+            <span class="range-pill">
+              <span style="width:8px;height:8px;border-radius:50%;background:#94a3b8;border:2px solid #1a1a2e;display:inline-block"></span>
+              −∞ a ∞
+            </span>
+          </div>
+          <ul class="text-[0.87rem] space-y-1.5 text-[#333]">
+            <li><strong>Saída:</strong> -∞ a ∞ — negativos passam com apenas 1% da intensidade</li>
+            <li><strong>Uso:</strong> alternativa ao ReLU quando neurônios mortos são um problema</li>
+            <li><strong>Diferença do ReLU:</strong> negativos não viram zero — ficam com uma inclinação pequena</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-amber">
+        <span class="callout-label">Analogia</span>
+        <strong>A peneira do ReLU, mas com furinhos minúsculos</strong> — os valores negativos não são completamente bloqueados, passam com 1% da força original.
+      </div>
+
+      <div class="io-map">
+        <div class="io-row"><span class="io-in">-10</span><span class="io-arr">→</span><span class="io-out neg">-0.1</span></div>
+        <div class="io-row"><span class="io-in">5</span><span class="io-arr">→</span><span class="io-out pos">5.0</span></div>
+      </div>
+    </section>
+
+    <!-- ══════════ 7. ELU ══════════ -->
+    <section class="doc-section mb-14" id="sec-elu">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="inline-flex items-center justify-center w-8 h-8 bg-amber-400 border-2 border-ink font-extrabold text-[0.82rem] shadow-brut-sm shrink-0">7</span>
+        <h2 class="text-[1.35rem] font-extrabold tracking-tight">ELU</h2>
+        <span class="text-[0.72rem] font-bold text-[#999] font-mono">Exponential Linear Unit</span>
+      </div>
+
+      <div class="fn-grid">
+        <div class="flex flex-col items-center gap-2">
+          <div class="mini-curve-wrap">
+            <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true">
+              <line x1="0" y1="30" x2="120" y2="30" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <line x1="60" y1="0" x2="60" y2="60" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <path d="M 0,53 C 20,53 40,42 60,30 L 120,5" fill="none" stroke="#1a1a2e" stroke-width="2"/>
+              <circle cx="60" cy="30" r="2.5" fill="#fbbf24" stroke="#1a1a2e" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <span class="font-mono text-[.72rem] font-bold text-[#666]">curva ELU</span>
+        </div>
+        <div>
+          <pre>f(x) = x             se x &gt; 0
+f(x) = α(eˣ - 1)    se x ≤ 0   (α = 1)</pre>
+          <div class="flex flex-wrap gap-2 items-center mb-3">
+            <span class="range-pill">
+              <span style="width:8px;height:8px;border-radius:50%;background:#94a3b8;border:2px solid #1a1a2e;display:inline-block"></span>
+              −∞ a ∞
+            </span>
+          </div>
+          <ul class="text-[0.87rem] space-y-1.5 text-[#333]">
+            <li><strong>Saída:</strong> -∞ a ∞ — negativos têm curva suave exponencial</li>
+            <li><strong>Uso:</strong> alternativa mais suave ao Leaky ReLU</li>
+            <li><strong>Vantagem:</strong> aprende mais rápido em alguns casos, saída negativa não vai para -∞</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-label">Nota</span>
+        A diferença entre ELU e Leaky ReLU está no lado negativo: Leaky ReLU usa uma reta (linear), enquanto ELU usa uma curva exponencial que se aproxima de <code>-α</code> assintoticamente.
+      </div>
+    </section>
+
+    <!-- ══════════ 8. GELU ══════════ -->
+    <section class="doc-section mb-14" id="sec-gelu">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="inline-flex items-center justify-center w-8 h-8 bg-amber-400 border-2 border-ink font-extrabold text-[0.82rem] shadow-brut-sm shrink-0">8</span>
+        <h2 class="text-[1.35rem] font-extrabold tracking-tight">GELU</h2>
+        <span class="text-[0.72rem] font-bold text-[#999] font-mono">Gaussian Error Linear Unit</span>
+      </div>
+
+      <div class="fn-grid">
+        <div class="flex flex-col items-center gap-2">
+          <div class="mini-curve-wrap">
+            <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true">
+              <line x1="0" y1="30" x2="120" y2="30" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <line x1="60" y1="0" x2="60" y2="60" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+              <path d="M 0,31 C 15,32 30,34 45,33 C 52,32 57,30 60,30 C 80,18 100,6 120,5" fill="none" stroke="#1a1a2e" stroke-width="2"/>
+              <circle cx="60" cy="30" r="2.5" fill="#fbbf24" stroke="#1a1a2e" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <span class="font-mono text-[.72rem] font-bold text-[#666]">curva GELU</span>
+        </div>
+        <div>
+          <pre>f(x) = x · Φ(x)
+<span style="color:#64748b">// Φ(x) = distribuição normal cumulativa</span></pre>
+          <div class="flex flex-wrap gap-2 items-center mb-3">
+            <span class="range-pill">
+              <span style="width:8px;height:8px;border-radius:50%;background:#94a3b8;border:2px solid #1a1a2e;display:inline-block"></span>
+              −∞ a ∞
+            </span>
+          </div>
+          <ul class="text-[0.87rem] space-y-1.5 text-[#333]">
+            <li><strong>Usada em:</strong> GPT, BERT, Claude e modelos de linguagem modernos</li>
+            <li><strong>Ideia:</strong> pondera cada valor com base em probabilidade estatística</li>
+            <li><strong>É uma versão "inteligente" do ReLU</strong> — decide se deixa passar com base em distribuição gaussiana</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-amber">
+        <span class="callout-label">Analogia</span>
+        Se ReLU é um porteiro que diz "pode entrar ou não", GELU é um porteiro que diz <strong>"você pode entrar, mas vou decidir com base na probabilidade estatística de você ser útil"</strong>.
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-label">Contexto</span>
+        GELU foi proposta em 2016 e hoje é a função padrão em modelos como GPT-2, GPT-3, BERT e Claude. A pequena "curva" no lado negativo (comparada ao ReLU) ajuda o gradiente a fluir melhor durante o treinamento.
+      </div>
+    </section>
+
+    <!-- ══════════ TABELA COMPARATIVA ══════════ -->
+    <section class="doc-section mb-14" id="sec-tabela">
+      <h2 class="text-[1.35rem] font-extrabold tracking-tight mb-5">Tabela Comparativa</h2>
+      <div class="overflow-x-auto">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Função</th>
+              <th>Saída</th>
+              <th>Uso principal</th>
+              <th>Problema / Observação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>ReLU</code></td>
+              <td>0 a ∞</td>
+              <td>Camadas intermediárias</td>
+              <td>Neurônio morto</td>
+            </tr>
+            <tr>
+              <td><code>Sigmoid</code></td>
+              <td>0 a 1</td>
+              <td>Saída binária (sim/não)</td>
+              <td>Gradiente desvanece</td>
+            </tr>
+            <tr>
+              <td><code>Tanh</code></td>
+              <td>−1 a 1</td>
+              <td>Intermediárias, RNNs, NLP</td>
+              <td>Gradiente desvanece</td>
+            </tr>
+            <tr>
+              <td><code>Softmax</code></td>
+              <td>0 a 1 (soma = 1)</td>
+              <td>Saída multi-classe</td>
+              <td>Só para a camada de saída</td>
+            </tr>
+            <tr>
+              <td><code>Linear</code></td>
+              <td>−∞ a ∞</td>
+              <td>Saída de regressão</td>
+              <td>Sem não-linearidade</td>
+            </tr>
+            <tr>
+              <td><code>Leaky ReLU</code></td>
+              <td>−∞ a ∞</td>
+              <td>Alternativa ao ReLU</td>
+              <td>Hiperparâmetro extra (slope)</td>
+            </tr>
+            <tr>
+              <td><code>ELU</code></td>
+              <td>−∞ a ∞</td>
+              <td>Alternativa mais suave ao Leaky</td>
+              <td>Mais pesada que ReLU</td>
+            </tr>
+            <tr>
+              <td><code>GELU</code></td>
+              <td>−∞ a ∞</td>
+              <td>Transformers (GPT, BERT, Claude)</td>
+              <td>Computacionalmente mais pesada</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════════ COMO ESCOLHER ══════════ -->
+    <section class="doc-section mb-14" id="sec-escolher">
+      <h2 class="text-[1.35rem] font-extrabold tracking-tight mb-5">Como Escolher</h2>
+
+      <div class="callout callout-amber mb-6">
+        <span class="callout-label">Regra de ouro</span>
+        Comece com <strong>ReLU</strong> nas camadas do meio e <strong>Sigmoid</strong> ou <strong>Softmax</strong> na saída. Só troque se tiver um problema específico.
+      </div>
+
+      <!-- Decision Tree Flowchart -->
+      <div class="border-2 border-ink bg-white shadow-brut p-6 mb-6 overflow-x-auto">
+        <p class="text-[0.68rem] font-bold uppercase tracking-widest text-[#999] mb-5">Árvore de decisão</p>
+        <div class="fc-wrap">
+
+          <!-- START -->
+          <div class="fc-terminal">INÍCIO</div>
+          <div class="fc-arrow text-center">↓</div>
+
+          <!-- Diamond 1: Camada de saída? -->
+          <div class="fc-diamond-wrap">
+            <svg width="200" height="90" viewBox="0 0 200 90">
+              <polygon points="100,4 196,45 100,86 4,45" fill="#fff" stroke="#1a1a2e" stroke-width="2"/>
+            </svg>
+            <div class="fc-diamond-label">Camada de<br>SAÍDA?</div>
+          </div>
+
+          <!-- Branch: Sim / Não -->
+          <div class="fc-branch mt-1 w-full max-w-[700px]">
+
+            <!-- SIM branch -->
+            <div class="fc-branch-col flex-1">
+              <div class="fc-branch-label">Sim ↓</div>
+
+              <!-- Diamond 2: Tipo de problema? -->
+              <div class="fc-diamond-wrap" style="width:190px;height:85px">
+                <svg width="190" height="85" viewBox="0 0 190 85">
+                  <polygon points="95,4 186,42 95,81 4,42" fill="#fef3c7" stroke="#1a1a2e" stroke-width="2"/>
+                </svg>
+                <div class="fc-diamond-label" style="font-size:.68rem">Tipo de<br>problema?</div>
+              </div>
+
+              <div class="fc-branch mt-1">
+                <div class="fc-branch-col">
+                  <div class="fc-branch-label" style="font-size:.62rem">binário</div>
+                  <div class="fc-arrow">↓</div>
+                  <div class="fc-process accent" style="min-width:100px;font-size:.75rem">Sigmoid</div>
+                </div>
+                <div class="fc-branch-col">
+                  <div class="fc-branch-label" style="font-size:.62rem">multi-classe</div>
+                  <div class="fc-arrow">↓</div>
+                  <div class="fc-process accent" style="min-width:100px;font-size:.75rem">Softmax</div>
+                </div>
+                <div class="fc-branch-col">
+                  <div class="fc-branch-label" style="font-size:.62rem">regressão</div>
+                  <div class="fc-arrow">↓</div>
+                  <div class="fc-process accent" style="min-width:100px;font-size:.75rem">Linear</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- NÃO branch -->
+            <div class="fc-branch-col flex-1">
+              <div class="fc-branch-label">Não ↓</div>
+              <p class="text-[.72rem] font-bold font-mono text-[#666] mb-1">camada intermediária</p>
+
+              <!-- Diamond 3: Problema específico? -->
+              <div class="fc-diamond-wrap" style="width:190px;height:85px">
+                <svg width="190" height="85" viewBox="0 0 190 85">
+                  <polygon points="95,4 186,42 95,81 4,42" fill="#fef3c7" stroke="#1a1a2e" stroke-width="2"/>
+                </svg>
+                <div class="fc-diamond-label" style="font-size:.68rem">Problema<br>específico?</div>
+              </div>
+
+              <div class="fc-branch mt-1 gap-[1rem]">
+                <div class="fc-branch-col">
+                  <div class="fc-branch-label" style="font-size:.62rem">geral</div>
+                  <div class="fc-arrow">↓</div>
+                  <div class="fc-process accent" style="min-width:80px;font-size:.72rem">ReLU</div>
+                  <p class="text-[.6rem] text-[#999] font-mono text-center mt-1">mais comum</p>
+                </div>
+                <div class="fc-branch-col">
+                  <div class="fc-branch-label" style="font-size:.62rem">neurônio morto</div>
+                  <div class="fc-arrow">↓</div>
+                  <div class="fc-process accent" style="min-width:80px;font-size:.68rem">Leaky ReLU</div>
+                </div>
+                <div class="fc-branch-col">
+                  <div class="fc-branch-label" style="font-size:.62rem">seq / texto</div>
+                  <div class="fc-arrow">↓</div>
+                  <div class="fc-process accent" style="min-width:80px;font-size:.72rem">Tanh / GELU</div>
+                </div>
+                <div class="fc-branch-col">
+                  <div class="fc-branch-label" style="font-size:.62rem">Transformer</div>
+                  <div class="fc-arrow">↓</div>
+                  <div class="fc-process accent" style="min-width:80px;font-size:.72rem">GELU</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Text tree version -->
+      <pre><span style="color:#fbbf24">Estou na camada de SAÍDA?</span>
+  ├── Problema de sim/não (binário)?     → <span style="color:#86efac">Sigmoid</span>
+  ├── Problema de múltiplas classes?     → <span style="color:#86efac">Softmax</span>
+  └── Prever um número contínuo?         → <span style="color:#86efac">Linear</span>
+
+<span style="color:#fbbf24">Estou numa camada INTERMEDIÁRIA (oculta)?</span>
+  ├── Uso geral (redes densas)?          → <span style="color:#86efac">ReLU</span>  <span style="color:#64748b">← mais comum</span>
+  ├── Neurônios mortos são um problema?  → <span style="color:#86efac">Leaky ReLU</span>
+  ├── Trabalhando com sequências/texto?  → <span style="color:#86efac">Tanh ou GELU</span>
+  └── Usando Transformer (GPT/BERT)?     → <span style="color:#86efac">GELU</span></pre>
+
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // IntersectionObserver for active TOC link
+  const sections = document.querySelectorAll('.doc-section');
+  const tocLinks = document.querySelectorAll('#toc .toc-link');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(link => link.classList.remove('active'));
+        const active = document.querySelector(`#toc a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+
+  sections.forEach(s => observer.observe(s));
+
+  // Back-to-top
+  const btt = document.getElementById('btt');
+  window.addEventListener('scroll', () => btt.classList.toggle('visible', window.scrollY > 300));
+  btt.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+</script>
+
+<button id="btt" class="btt-btn" aria-label="Voltar ao topo">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</button>
+</body>
+</html>

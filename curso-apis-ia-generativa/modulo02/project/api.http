@@ -1,0 +1,39 @@
+@baseUrl = http://localhost:3000
+
+### Chat - comando upper case
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+  "question": "make this message upper please"
+}
+
+### Chat - comando lower case
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+  "question": "make this message lower please"
+}
+
+### Chat - comando desconhecido (deve cair no fallback)
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+  "question": "qual a previsão do tempo?"
+}
+
+### Chat - question vazia
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+  "question": ""
+}
+
+### Chat - question ausente
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{}

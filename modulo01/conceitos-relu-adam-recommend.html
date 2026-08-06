@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReLU, Adam e Recommend — Módulo 01</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: { ink: '#1a1a2e', surface: '#faf9f7' },
+          boxShadow: {
+            'brut':    '3px 3px 0 #1a1a2e',
+            'brut-sm': '2px 2px 0 #1a1a2e',
+            'brut-lg': '5px 5px 0 #1a1a2e',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* TOC active link */
+    .toc-link { display: block; padding: 0.35rem 0.6rem; font-size: 0.8rem; font-weight: 500; color: #666; text-decoration: none; border-left: 3px solid transparent; transition: color 100ms, border-color 100ms, background 100ms; }
+    .toc-link:hover  { color: #1a1a2e; background: #fef3c7; border-left-color: #fbbf24; }
+    .toc-link.active { color: #1a1a2e; background: #fef3c7; border-left-color: #fbbf24; font-weight: 700; }
+    .toc-sub { padding-left: 1.25rem; font-size: 0.75rem; }
+
+    /* section scroll offset */
+    .doc-section { scroll-margin-top: 80px; }
+
+    /* code block */
+    pre { background: #1a1a2e; color: #e2e8f0; border: 2px solid #1a1a2e; box-shadow: 3px 3px 0 #1a1a2e; padding: 1.25rem 1.5rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.7; margin: 1rem 0; }
+    pre .comment  { color: #64748b; }
+    pre .string   { color: #86efac; }
+    pre .keyword  { color: #fbbf24; }
+    pre .fn       { color: #93c5fd; }
+    pre .num      { color: #f9a8d4; }
+
+    /* inline code */
+    p code, li code, td code, th code { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; background: #f3f4f6; border: 1px solid #e5e7eb; padding: 1px 5px; }
+
+    /* table */
+    .doc-table { width: 100%; border-collapse: collapse; border: 2px solid #1a1a2e; box-shadow: 3px 3px 0 #1a1a2e; }
+    .doc-table th { background: #1a1a2e; color: #fff; padding: 0.6rem 1rem; font-size: 0.82rem; font-weight: 700; text-align: left; }
+    .doc-table td { padding: 0.6rem 1rem; font-size: 0.83rem; border-top: 1px solid #e5e7eb; }
+    .doc-table tr:nth-child(even) td { background: #fefce8; }
+
+    /* analogy card */
+    .analogy-card { border-left: 5px solid #fbbf24; background: #fef3c7; border: 2px solid #1a1a2e; border-left: 5px solid #fbbf24; box-shadow: 3px 3px 0 #1a1a2e; padding: 1rem 1.25rem; font-style: italic; font-size: 0.9rem; color: #44403c; }
+    .analogy-card strong { font-style: normal; font-weight: 700; color: #1a1a2e; }
+
+    /* loss bar */
+    .loss-bar-fill { background: linear-gradient(90deg, #fbbf24, #f59e0b); transition: width 600ms cubic-bezier(.4,0,.2,1); }
+
+    /* flow box */
+    .flow-box { border: 2px solid #1a1a2e; background: #fff; box-shadow: 2px 2px 0 #1a1a2e; padding: 0.5rem 1.25rem; font-size: 0.82rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; text-align: center; }
+    .flow-arrow { font-size: 1.1rem; color: #fbbf24; font-weight: 800; text-align: center; }
+
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body class="bg-surface text-ink font-sans leading-relaxed">
+
+<!-- Header -->
+<header class="sticky top-0 z-[100] bg-surface border-b-2 border-ink px-6 h-16 flex items-center gap-4">
+  <a href="../index.html" class="flex items-center gap-1.5 font-extrabold text-[0.95rem] tracking-tight no-underline text-ink whitespace-nowrap">
+    <span class="inline-block bg-ink text-white px-1.5 py-px text-[0.8rem]">IA</span>Docs
+  </a>
+  <span class="text-[#ccc] font-light">/</span>
+  <a href="../index.html" class="text-[0.82rem] text-[#888] no-underline hover:text-ink transition-colors duration-100">Módulo 01</a>
+  <span class="text-[#ccc] font-light">/</span>
+  <span class="text-[0.82rem] font-semibold truncate">ReLU, Adam e Recommend</span>
+</header>
+
+<!-- Layout -->
+<div class="flex min-h-[calc(100vh-64px)]">
+
+  <!-- TOC Sidebar -->
+  <aside class="w-[220px] shrink-0 sticky top-16 self-start border-r-2 border-ink bg-white overflow-y-auto max-h-[calc(100vh-64px)] py-5" aria-label="Índice do documento">
+    <p class="text-[0.68rem] font-bold uppercase tracking-widest text-[#999] px-3 mb-2">Neste documento</p>
+    <nav id="toc">
+      <a href="#sec-relu"      class="toc-link">1. ReLU</a>
+      <a href="#sec-relu-formula"  class="toc-link toc-sub">Fórmula</a>
+      <a href="#sec-relu-why"      class="toc-link toc-sub">Por que usar?</a>
+      <a href="#sec-relu-vs"       class="toc-link toc-sub">ReLU vs Sigmoid</a>
+      <a href="#sec-relu-code"     class="toc-link toc-sub">No código</a>
+      <a href="#sec-adam"      class="toc-link mt-1">2. Adam Optimizer</a>
+      <a href="#sec-adam-base"     class="toc-link toc-sub">Gradiente Descendente</a>
+      <a href="#sec-adam-how"      class="toc-link toc-sub">Como Adam resolve</a>
+      <a href="#sec-adam-loss"     class="toc-link toc-sub">Evolução do loss</a>
+      <a href="#sec-adam-code"     class="toc-link toc-sub">No código</a>
+      <a href="#sec-recommend" class="toc-link mt-1">3. recommend()</a>
+      <a href="#sec-rec-logic"     class="toc-link toc-sub">Lógica</a>
+      <a href="#sec-rec-code"      class="toc-link toc-sub">Implementação</a>
+      <a href="#sec-rec-example"   class="toc-link toc-sub">Exemplo: Ana Lima</a>
+      <a href="#sec-rec-predict"   class="toc-link toc-sub">Dentro de predict()</a>
+      <a href="#sec-connection" class="toc-link mt-1">4. Conexão entre os três</a>
+    </nav>
+  </aside>
+
+  <!-- Content -->
+  <main class="flex-1 px-16 py-12 pb-24">
+
+    <!-- Page header -->
+    <div class="mb-12">
+      <div class="inline-flex items-center gap-1.5 text-[0.72rem] font-bold uppercase tracking-[0.06em] px-2.5 py-[3px] border-2 border-ink shadow-brut-sm mb-3 bg-amber-100">
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>Módulo 01 · Fundamentos
+      </div>
+      <h1 class="text-[2.4rem] font-extrabold tracking-[-0.03em] leading-[1.1] mb-3">
+        ReLU, Adam<br>e Recommend
+      </h1>
+      <p class="text-[0.9rem] text-[#666] max-w-[520px] leading-relaxed">
+        Como a rede neural aprende a fazer recomendações — da função de ativação ao otimizador, até a função que entrega os resultados.
+      </p>
+      <div class="mt-4 flex gap-2 flex-wrap">
+        <span class="text-[0.72rem] font-mono font-medium px-2 py-1 border-2 border-ink bg-white shadow-brut-sm">exemplo-01-ecommerce</span>
+        <span class="text-[0.72rem] font-mono font-medium px-2 py-1 border-2 border-ink bg-white shadow-brut-sm">parte04</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════ SECTION 1: ReLU ═══════════════════════════════ -->
+    <section class="doc-section mb-16" id="sec-relu">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="inline-flex items-center justify-center w-10 h-10 text-xl font-extrabold border-2 border-ink shadow-brut bg-amber-100 shrink-0">1</span>
+        <h2 class="text-[1.6rem] font-extrabold tracking-[-0.02em]">ReLU — A "peneira" dos neurônios</h2>
+      </div>
+
+      <p class="text-[0.88rem] text-[#555] mb-4">
+        <strong class="text-ink">ReLU</strong> = <em>Rectified Linear Unit</em>
+      </p>
+
+      <!-- Formula -->
+      <div class="doc-section mb-8" id="sec-relu-formula">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">Fórmula</h3>
+        <div class="border-2 border-ink shadow-brut bg-white p-5 flex flex-col gap-4">
+          <div class="font-mono text-center text-2xl font-bold tracking-tight">
+            f(x) = max(0, x)
+          </div>
+          <div class="border-t-2 border-dashed border-[#e5e7eb] pt-4 grid grid-cols-2 gap-3">
+            <div class="border-2 border-ink bg-rose-50 p-3 text-center">
+              <p class="text-[0.72rem] font-bold uppercase tracking-wider text-[#999] mb-1">Entrada negativa</p>
+              <p class="font-mono text-lg font-bold">−5.2 → <span class="text-rose-500">0</span></p>
+              <p class="text-[0.75rem] text-[#888] mt-1">bloqueado</p>
+            </div>
+            <div class="border-2 border-ink bg-emerald-50 p-3 text-center">
+              <p class="text-[0.72rem] font-bold uppercase tracking-wider text-[#999] mb-1">Entrada positiva</p>
+              <p class="font-mono text-lg font-bold">3.7 → <span class="text-emerald-600">3.7</span></p>
+              <p class="text-[0.75rem] text-[#888] mt-1">passa intacto</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Por que usar -->
+      <div class="doc-section mb-8" id="sec-relu-why">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">Por que usar ReLU?</h3>
+        <p class="text-[0.875rem] text-[#374151] leading-relaxed mb-4">
+          Sem funções de ativação, uma rede neural seria apenas multiplicação de matrizes — só consegue aprender relações lineares (retas). O mundo real é cheio de relações complexas. ReLU introduz <strong>não-linearidade</strong> e permite que a rede aprenda combinações, exceções e padrões complexos.
+        </p>
+        <div class="analogy-card">
+          <strong>Analogia:</strong> Uma peneira que deixa passar apenas sinais positivos (relevantes) e bloqueia os negativos (irrelevantes). Cada neurônio tem sua própria peneira.
+        </div>
+      </div>
+
+      <!-- ReLU vs Sigmoid -->
+      <div class="doc-section mb-8" id="sec-relu-vs">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">ReLU vs Sigmoid</h3>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>ReLU</th>
+              <th>Sigmoid</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="font-semibold text-ink">Fórmula</td>
+              <td><code>max(0, x)</code></td>
+              <td><code>1 / (1 + e^-x)</code></td>
+            </tr>
+            <tr>
+              <td class="font-semibold text-ink">Saída</td>
+              <td>0 a ∞</td>
+              <td>0 a 1</td>
+            </tr>
+            <tr>
+              <td class="font-semibold text-ink">Uso</td>
+              <td>Camadas intermediárias</td>
+              <td>Camada de saída (probabilidade)</td>
+            </tr>
+            <tr>
+              <td class="font-semibold text-ink">Vantagem</td>
+              <td>Rápida, evita gradiente desvanecendo</td>
+              <td>Ideal para probabilidades (0–1)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- No código -->
+      <div class="doc-section" id="sec-relu-code">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">No código</h3>
+<pre><span class="comment">// modelTrainingWorker.js — parte04, linha 228</span>
+model.add(tf.layers.dense({ units: <span class="num">128</span>, activation: <span class="string">'relu'</span> }))
+<span class="comment">// cada um dos 128 neurônios aplica ReLU na saída</span></pre>
+      </div>
+    </section>
+
+    <hr class="border-t-2 border-dashed border-[#e5e7eb] mb-16" />
+
+    <!-- ═══════════════════════════════ SECTION 2: Adam ═══════════════════════════════ -->
+    <section class="doc-section mb-16" id="sec-adam">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="inline-flex items-center justify-center w-10 h-10 text-xl font-extrabold border-2 border-ink shadow-brut bg-amber-100 shrink-0">2</span>
+        <h2 class="text-[1.6rem] font-extrabold tracking-[-0.02em]">Adam Optimizer — Como a rede aprende</h2>
+      </div>
+      <p class="text-[0.88rem] text-[#555] mb-6">
+        <strong class="text-ink">Adam</strong> = <em>Adaptive Moment Estimation</em>
+      </p>
+
+      <!-- Gradiente Descendente -->
+      <div class="doc-section mb-8" id="sec-adam-base">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">O conceito base: Gradiente Descendente</h3>
+        <p class="text-[0.875rem] text-[#374151] leading-relaxed mb-4">
+          A rede começa com pesos aleatórios e erra muito. A cada epoch, o algoritmo calcula:
+        </p>
+        <div class="border-2 border-ink shadow-brut bg-white divide-y-2 divide-ink mb-4">
+          <div class="flex items-center gap-3 px-4 py-3">
+            <span class="w-7 h-7 bg-amber-400 border-2 border-ink flex items-center justify-center font-extrabold text-sm shrink-0">1</span>
+            <p class="text-[0.875rem]"><strong>O erro atual</strong> — medido pela função de <em>loss</em></p>
+          </div>
+          <div class="flex items-center gap-3 px-4 py-3">
+            <span class="w-7 h-7 bg-amber-400 border-2 border-ink flex items-center justify-center font-extrabold text-sm shrink-0">2</span>
+            <p class="text-[0.875rem]"><strong>Qual direção reduz o erro</strong> — o gradiente</p>
+          </div>
+          <div class="flex items-center gap-3 px-4 py-3">
+            <span class="w-7 h-7 bg-amber-400 border-2 border-ink flex items-center justify-center font-extrabold text-sm shrink-0">3</span>
+            <p class="text-[0.875rem]"><strong>Quanto ajustar cada peso</strong> — a taxa de aprendizado</p>
+          </div>
+        </div>
+        <div class="analogy-card">
+          <strong>Analogia da montanha:</strong> Você está numa montanha com neblina e quer chegar ao vale (erro mínimo). Sente a inclinação do chão e sempre dá um passo para o lado mais íngreme para baixo.
+        </div>
+      </div>
+
+      <!-- Como Adam resolve -->
+      <div class="doc-section mb-8" id="sec-adam-how">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">Como Adam resolve o problema dos passos fixos</h3>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="border-2 border-ink bg-rose-50 p-4 shadow-brut-sm">
+            <p class="text-[0.72rem] font-bold uppercase tracking-wider text-rose-500 mb-2">Passo muito grande</p>
+            <p class="text-[0.82rem] text-[#555]">Pula o vale, oscila para sempre sem convergir</p>
+          </div>
+          <div class="border-2 border-ink bg-amber-50 p-4 shadow-brut-sm">
+            <p class="text-[0.72rem] font-bold uppercase tracking-wider text-amber-600 mb-2">Passo muito pequeno</p>
+            <p class="text-[0.82rem] text-[#555]">Chega lá, mas demora muito — epochs demais</p>
+          </div>
+        </div>
+        <p class="text-[0.875rem] text-[#374151] leading-relaxed mb-4">
+          Adam é <strong>adaptativo</strong> — ajusta o tamanho do passo automaticamente para cada peso:
+        </p>
+        <div class="border-2 border-ink shadow-brut bg-white divide-y divide-[#e5e7eb]">
+          <div class="flex items-start gap-3 px-4 py-3">
+            <code class="shrink-0 bg-amber-100 border border-amber-300 px-2 py-0.5 text-[0.78rem] font-bold">m</code>
+            <p class="text-[0.875rem]"><strong>Momento 1</strong> — média dos gradientes recentes ("para onde tenho ido")</p>
+          </div>
+          <div class="flex items-start gap-3 px-4 py-3">
+            <code class="shrink-0 bg-amber-100 border border-amber-300 px-2 py-0.5 text-[0.78rem] font-bold">v</code>
+            <p class="text-[0.875rem]"><strong>Momento 2</strong> — média dos quadrados ("quão incerto estou")</p>
+          </div>
+        </div>
+        <div class="analogy-card mt-4">
+          <strong>Analogia do motorista:</strong> Adam é um motorista experiente. Nas retas, acelera. Nas curvas, freia. E ainda se lembra das curvas anteriores para antecipar.
+        </div>
+      </div>
+
+      <!-- Evolução do loss -->
+      <div class="doc-section mb-8" id="sec-adam-loss">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">Evolução do loss durante o treino</h3>
+        <div class="border-2 border-ink shadow-brut bg-white p-5 space-y-4" id="loss-chart">
+          <div>
+            <div class="flex justify-between text-[0.75rem] font-mono mb-1">
+              <span class="font-bold">Epoch 1</span>
+              <span class="text-[#888]">loss = 0.68 — chutes aleatórios</span>
+            </div>
+            <div class="h-5 border-2 border-ink bg-[#f3f4f6] overflow-hidden">
+              <div class="h-full loss-bar-fill" style="width:68%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-[0.75rem] font-mono mb-1">
+              <span class="font-bold">Epoch 10</span>
+              <span class="text-[#888]">loss = 0.42 — começa a aprender</span>
+            </div>
+            <div class="h-5 border-2 border-ink bg-[#f3f4f6] overflow-hidden">
+              <div class="h-full loss-bar-fill" style="width:42%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-[0.75rem] font-mono mb-1">
+              <span class="font-bold">Epoch 50</span>
+              <span class="text-[#888]">loss = 0.19 — convergindo</span>
+            </div>
+            <div class="h-5 border-2 border-ink bg-[#f3f4f6] overflow-hidden">
+              <div class="h-full loss-bar-fill" style="width:19%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-[0.75rem] font-mono mb-1">
+              <span class="font-bold">Epoch 100</span>
+              <span class="text-[#888]">loss = 0.08 — próximo do mínimo</span>
+            </div>
+            <div class="h-5 border-2 border-ink bg-[#f3f4f6] overflow-hidden">
+              <div class="h-full loss-bar-fill" style="width:8%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No código -->
+      <div class="doc-section" id="sec-adam-code">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">No código</h3>
+<pre><span class="comment">// modelTrainingWorker.js — parte04, linha 261</span>
+model.compile({
+    optimizer: tf.train.<span class="fn">adam</span>(<span class="num">0.01</span>),   <span class="comment">// taxa de aprendizado inicial = 0.01</span>
+    loss: <span class="string">'binaryCrossentropy'</span>,       <span class="comment">// mede o erro em problemas sim/não</span>
+    metrics: [<span class="string">'accuracy'</span>]
+})</pre>
+        <p class="text-[0.82rem] text-[#555] mt-3">
+          <code>binaryCrossentropy</code> = função de perda para problemas binários (comprou / não comprou). Penaliza muito quando o modelo está muito errado com alta confiança.
+        </p>
+      </div>
+    </section>
+
+    <hr class="border-t-2 border-dashed border-[#e5e7eb] mb-16" />
+
+    <!-- ═══════════════════════════════ SECTION 3: recommend() ═══════════════════════════════ -->
+    <section class="doc-section mb-16" id="sec-recommend">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="inline-flex items-center justify-center w-10 h-10 text-xl font-extrabold border-2 border-ink shadow-brut bg-amber-100 shrink-0">3</span>
+        <h2 class="text-[1.6rem] font-extrabold tracking-[-0.02em]">Como a função <code class="text-[1.2rem]">recommend()</code> funciona</h2>
+      </div>
+      <p class="text-[0.875rem] text-[#555] mb-6">A função estava vazia no código do curso — aqui está a implementação completa com explicação linha a linha.</p>
+
+      <!-- Lógica -->
+      <div class="doc-section mb-8" id="sec-rec-logic">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">Lógica em 5 passos</h3>
+        <div class="border-2 border-ink shadow-brut bg-white divide-y-2 divide-ink">
+          <div class="flex items-start gap-3 px-4 py-3">
+            <span class="w-7 h-7 bg-amber-400 border-2 border-ink flex items-center justify-center font-extrabold text-sm shrink-0 mt-0.5">1</span>
+            <p class="text-[0.875rem]">Pegar o usuário atual e transformá-lo em vetor numérico com <code>encodeUser()</code></p>
+          </div>
+          <div class="flex items-start gap-3 px-4 py-3">
+            <span class="w-7 h-7 bg-amber-400 border-2 border-ink flex items-center justify-center font-extrabold text-sm shrink-0 mt-0.5">2</span>
+            <p class="text-[0.875rem]">Para cada produto: transformar em vetor, juntar <code>[vetor usuário] + [vetor produto]</code></p>
+          </div>
+          <div class="flex items-start gap-3 px-4 py-3">
+            <span class="w-7 h-7 bg-amber-400 border-2 border-ink flex items-center justify-center font-extrabold text-sm shrink-0 mt-0.5">3</span>
+            <p class="text-[0.875rem]">Perguntar ao modelo: <em>"qual a chance de compra?"</em> → retorna número entre 0 e 1</p>
+          </div>
+          <div class="flex items-start gap-3 px-4 py-3">
+            <span class="w-7 h-7 bg-amber-400 border-2 border-ink flex items-center justify-center font-extrabold text-sm shrink-0 mt-0.5">4</span>
+            <p class="text-[0.875rem]">Ordenar por pontuação (maior = mais recomendado) e remover o que já foi comprado</p>
+          </div>
+          <div class="flex items-start gap-3 px-4 py-3">
+            <span class="w-7 h-7 bg-amber-400 border-2 border-ink flex items-center justify-center font-extrabold text-sm shrink-0 mt-0.5">5</span>
+            <p class="text-[0.875rem]">Retornar os top 5 via <code>postMessage()</code> para a página principal</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Implementação -->
+      <div class="doc-section mb-8" id="sec-rec-code">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">Implementação</h3>
+<pre><span class="keyword">function</span> <span class="fn">recommend</span>({ user }) {
+    <span class="keyword">const</span> context = _globalCtx
+    <span class="keyword">const</span> model   = _model
+
+    <span class="comment">// 1. Codifica o usuário em vetor numérico</span>
+    <span class="keyword">const</span> userVector = <span class="fn">encodeUser</span>(user, context).<span class="fn">dataSync</span>()
+
+    <span class="comment">// 2. Pontua cada produto</span>
+    <span class="keyword">const</span> scores = context.products.<span class="fn">map</span>(product => {
+        <span class="keyword">const</span> productVector = <span class="fn">encodeProduct</span>(product, context).<span class="fn">dataSync</span>()
+
+        <span class="comment">// junta os vetores (igual ao que foi feito no treino)</span>
+        <span class="keyword">const</span> input = tf.<span class="fn">tensor2d</span>([[...userVector, ...productVector]])
+
+        <span class="comment">// modelo retorna número entre 0 e 1</span>
+        <span class="keyword">const</span> score = model.<span class="fn">predict</span>(input).<span class="fn">dataSync</span>()[<span class="num">0</span>]
+
+        <span class="keyword">return</span> { product, score }
+    })
+
+    <span class="comment">// 3. Ordena do maior para o menor</span>
+    <span class="keyword">const</span> sorted = scores.<span class="fn">sort</span>((a, b) => b.score - a.score)
+
+    <span class="comment">// 4. Remove produtos já comprados</span>
+    <span class="keyword">const</span> alreadyBought = <span class="keyword">new</span> Set(user.purchases.<span class="fn">map</span>(p => p.name))
+    <span class="keyword">const</span> recommendations = sorted
+        .<span class="fn">filter</span>(item => !alreadyBought.<span class="fn">has</span>(item.product.name))
+        .<span class="fn">slice</span>(<span class="num">0</span>, <span class="num">5</span>)
+
+    <span class="comment">// 5. Envia para a página principal</span>
+    <span class="fn">postMessage</span>({
+        type: workerEvents.recommend,
+        user,
+        recommendations: recommendations.<span class="fn">map</span>(r => r.product)
+    })
+}</pre>
+      </div>
+
+      <!-- Exemplo Ana Lima -->
+      <div class="doc-section mb-8" id="sec-rec-example">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">Exemplo — Ana Lima (25 anos, comprou Fones + Relógio)</h3>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Score</th>
+              <th>Por quê?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="font-semibold">Caixa de Som Bluetooth</td>
+              <td><span class="inline-block bg-emerald-100 border border-emerald-300 px-2 py-0.5 text-[0.78rem] font-mono font-bold text-emerald-700">0.87</span></td>
+              <td class="text-[0.82rem] text-[#555]">eletrônico, mesma faixa etária</td>
+            </tr>
+            <tr>
+              <td class="font-semibold">Mochila Executiva</td>
+              <td><span class="inline-block bg-blue-100 border border-blue-300 px-2 py-0.5 text-[0.78rem] font-mono font-bold text-blue-700">0.61</span></td>
+              <td class="text-[0.82rem] text-[#555]">outros jovens compraram junto</td>
+            </tr>
+            <tr>
+              <td class="font-semibold">Óculos de Sol</td>
+              <td><span class="inline-block bg-amber-100 border border-amber-300 px-2 py-0.5 text-[0.78rem] font-mono font-bold text-amber-700">0.43</span></td>
+              <td class="text-[0.82rem] text-[#555]">preço médio, neutro</td>
+            </tr>
+            <tr>
+              <td class="font-semibold">Camiseta Estampada</td>
+              <td><span class="inline-block bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-0.5 text-[0.78rem] font-mono font-bold text-[#888]">0.21</span></td>
+              <td class="text-[0.82rem] text-[#555]">categoria diferente do perfil</td>
+            </tr>
+            <tr>
+              <td class="font-semibold">Boné Estiloso</td>
+              <td><span class="inline-block bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-0.5 text-[0.78rem] font-mono font-bold text-[#888]">0.18</span></td>
+              <td class="text-[0.82rem] text-[#555]">categoria diferente</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Dentro de predict() -->
+      <div class="doc-section" id="sec-rec-predict">
+        <h3 class="text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#999] mb-3">O que acontece dentro de model.predict()</h3>
+        <div class="border-2 border-ink shadow-brut bg-white p-6">
+          <div class="flex flex-col items-center gap-2">
+            <div class="flow-box w-full max-w-[380px] bg-amber-50">[vetor Ana] + [vetor Caixa de Som]</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box w-full max-w-[380px]">128 neurônios + <span class="text-amber-500">ReLU</span> — detecta padrões brutos</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box w-full max-w-[380px]">64 neurônios + <span class="text-amber-500">ReLU</span> — combina padrões</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box w-full max-w-[380px]">32 neurônios + <span class="text-amber-500">ReLU</span> — refina</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box w-full max-w-[380px]">1 neurônio + <span class="text-violet-500">Sigmoid</span> — comprime para 0–1</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box w-full max-w-[380px] bg-emerald-50 text-emerald-700 text-lg">0.87 ← "87% de chance de compra"</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="border-t-2 border-dashed border-[#e5e7eb] mb-16" />
+
+    <!-- ═══════════════════════════════ SECTION 4: Conexão ═══════════════════════════════ -->
+    <section class="doc-section mb-8" id="sec-connection">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="inline-flex items-center justify-center w-10 h-10 text-xl font-extrabold border-2 border-ink shadow-brut bg-amber-100 shrink-0">4</span>
+        <h2 class="text-[1.6rem] font-extrabold tracking-[-0.02em]">Conexão entre os três conceitos</h2>
+      </div>
+
+      <div class="border-2 border-ink shadow-brut bg-white p-6 mb-6">
+        <div class="flex flex-col gap-0">
+          <div class="flex items-start gap-4 pb-5 relative">
+            <div class="w-[3px] bg-amber-400 absolute left-[18px] top-8 bottom-0"></div>
+            <div class="w-9 h-9 border-2 border-ink bg-amber-400 flex items-center justify-center font-extrabold text-sm shrink-0 z-10">A</div>
+            <div>
+              <p class="font-bold text-[0.9rem] mb-0.5">Adam Optimizer</p>
+              <p class="text-[0.82rem] text-[#555]">Ajusta os pesos da rede a cada epoch com base no gradiente</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-4 pb-5 relative">
+            <div class="w-[3px] bg-amber-400 absolute left-[18px] top-8 bottom-0"></div>
+            <div class="w-9 h-9 border-2 border-ink bg-amber-200 flex items-center justify-center font-extrabold text-sm shrink-0 z-10">R</div>
+            <div>
+              <p class="font-bold text-[0.9rem] mb-0.5">ReLU</p>
+              <p class="text-[0.82rem] text-[#555]">Pesos ajustados mudam como cada neurônio reage — ReLU decide quais sinais passam em cada camada</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-9 h-9 border-2 border-ink bg-amber-100 flex items-center justify-center font-extrabold text-sm shrink-0 z-10">P</div>
+            <div>
+              <p class="font-bold text-[0.9rem] mb-0.5">recommend() / predict()</p>
+              <p class="text-[0.82rem] text-[#555]">Depois de 100 epochs, <code>predict()</code> aplica o que aprendeu e <code>recommend()</code> usa as previsões para ordenar os produtos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="analogy-card">
+        O <strong>treinamento</strong> (Adam + ReLU + 100 epochs) é o <strong>professor</strong>.<br>
+        A <strong>previsão</strong> (<code>predict</code>) é o <strong>aluno respondendo a prova</strong>.<br>
+        A <strong>recomendação</strong> (<code>recommend</code>) é o <strong>resultado final que o usuário vê</strong>.
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // TOC active state on scroll
+  const sections = document.querySelectorAll('.doc-section[id]');
+  const tocLinks = document.querySelectorAll('#toc .toc-link');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`#toc a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-64px 0px -70% 0px', threshold: 0 });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

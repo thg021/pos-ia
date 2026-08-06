@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Módulo 7 — Multimodalidade e observabilidade</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Charter', 'Georgia', '"Iowan Old Style"', '"Times New Roman"', 'serif'],
+          sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+          mono: ['ui-monospace', '"SF Mono"', '"Cascadia Code"', '"Roboto Mono"', 'Consolas', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+:root {
+  --bg: #eef1ef;
+  --bg-elevated: #e2e8e2;
+  --ink: #171b18;
+  --ink-soft: #4a534c;
+  --ink-faint: #6f786f;
+  --line: #c7d0c7;
+  --accent-route: #b8862e;
+  --accent-route-soft: #b8862e33;
+  --accent-artigo: #7c6bb0;
+  --accent-artigo-soft: #7c6bb022;
+  /* Bloco de código: paleta fixa do tema Dracula (dracula-theme.com), independente
+     do tema claro/escuro da página em volta — código sempre lido sobre fundo escuro. */
+  --code-bg: #282a36;
+  --code-fg: #f8f8f2;
+  --code-line: #44475a;
+  --code-comment: #6272a4;
+  --code-string: #f1fa8c;
+  --code-keyword: #ff79c6;
+  --code-func: #50fa7b;
+  --code-number: #bd93f9;
+  --code-type: #8be9fd;
+  --font-display: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151a;
+    --bg-elevated: #191d22;
+    --ink: #e7ebe8;
+    --ink-soft: #aab3ac;
+    --ink-faint: #7c877e;
+    --line: #2b3230;
+    --accent-route: #e0ac4a;
+    --accent-route-soft: #e0ac4a2b;
+    --accent-artigo: #9a8cd6;
+    --accent-artigo-soft: #9a8cd62b;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151a;
+  --bg-elevated: #191d22;
+  --ink: #e7ebe8;
+  --ink-soft: #aab3ac;
+  --ink-faint: #7c877e;
+  --line: #2b3230;
+  --accent-route: #e0ac4a;
+  --accent-route-soft: #e0ac4a2b;
+  --accent-artigo: #9a8cd6;
+  --accent-artigo-soft: #9a8cd62b;
+}
+:root[data-theme="light"] {
+  --bg: #eef1ef;
+  --bg-elevated: #e2e8e2;
+  --ink: #171b18;
+  --ink-soft: #4a534c;
+  --ink-faint: #6f786f;
+  --line: #c7d0c7;
+  --accent-route: #b8862e;
+  --accent-route-soft: #b8862e33;
+  --accent-artigo: #7c6bb0;
+  --accent-artigo-soft: #7c6bb022;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--accent-route-soft); }
+
+a, button { font-family: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent-route); outline-offset: 2px; }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-route) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--accent-route) 50%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-route);
+}
+*::-webkit-scrollbar-corner { background: transparent; }
+
+.content h1, .content h2, .content h3, .content h4 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+  margin: 1.6em 0 0.5em;
+}
+.content h1 { display: none; }
+.content h2 { font-size: 1.35rem; border-top: 1px solid var(--line); padding-top: 0.9em; }
+.content h3 { font-size: 1.1rem; color: var(--ink); }
+.content h4 { font-size: 1rem; color: var(--ink-soft); }
+.content p { margin: 0 0 1.1em; color: var(--ink); }
+.content strong { color: var(--ink); }
+.content em { color: var(--ink-soft); }
+.content code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--bg-elevated);
+  padding: 0.12em 0.4em;
+  border-radius: 5px;
+}
+.content ul, .content ol { padding-left: 1.3em; margin: 0 0 1.2em; }
+.content li { margin: 0.35em 0; }
+.content li > ul, .content li > ol { margin-top: 0.35em; }
+.content blockquote {
+  border-left: 3px solid var(--accent-route);
+  margin: 0 0 1.2em;
+  padding: 0.2em 0 0.2em 1em;
+  color: var(--ink-soft);
+}
+.content blockquote p { margin-bottom: 0.6em; }
+.content hr { border: none; border-top: 1px solid var(--line); margin: 2em 0; }
+
+.code-card {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 10px;
+  margin: 0 0 1.4em;
+  overflow: hidden;
+  border: 1px solid var(--code-line);
+}
+.code-lang {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #93a099;
+  padding: 8px 14px 0;
+}
+.code-card pre {
+  margin: 0;
+  padding: 10px 14px 16px;
+  overflow-x: auto;
+}
+.code-card code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  background: none;
+  padding: 0;
+  color: inherit;
+  white-space: pre;
+}
+.tok-comment { color: var(--code-comment); font-style: italic; }
+.tok-string { color: var(--code-string); }
+.tok-keyword { color: var(--code-keyword); }
+.tok-func { color: var(--code-func); }
+.tok-number { color: var(--code-number); }
+.tok-type { color: var(--code-type); }
+
+.table-wrap { overflow-x: auto; margin: 0 0 1.4em; }
+.content table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+.content th, .content td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.content th {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  background: var(--bg-elevated);
+}
+
+.inline-link {
+  color: var(--accent-route);
+  border-bottom: 1px solid var(--accent-route-soft);
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding: 0;
+  font: inherit;
+}
+.inline-link:hover { border-bottom-color: var(--accent-route); }
+</style>
+</head>
+<body class="font-sans">
+<div class="flex flex-col md:flex-row w-full min-h-screen" style="background:var(--bg);color:var(--ink)">
+  <aside class="w-full md:w-[300px] md:shrink-0 border-b md:border-b-0 md:border-r border-[var(--line)] px-5 py-7 md:sticky md:top-0 md:h-screen overflow-y-auto flex flex-col gap-6">
+    <a href="../index.html" class="inline-flex items-center gap-1 text-[0.78rem] font-medium" style="color:var(--ink-faint)">&larr; Início</a>
+    <div>
+      <div class="font-mono text-[0.68rem] tracking-[0.12em] uppercase" style="color:var(--accent-route)">Módulo 7 · APIs de IA Generativa</div>
+      <h1 class="font-display text-[1.35rem] leading-tight mt-1 text-balance">Multimodalidade e observabilidade</h1>
+      <p class="text-[0.85rem] mt-1.5" style="color:var(--ink-soft)">As 2 aulas finais do curso: entrada multimodal (imagem, áudio, realtime) e observabilidade em produção (tracing, evaluation). Panorama conceitual, sem projeto novo construído passo a passo.</p>
+    </div>
+    <nav class="relative flex flex-col" id="route"></nav>
+    <div class="mt-auto pt-4 border-t text-[0.78rem]" style="border-color:var(--line);color:var(--ink-faint)">
+      Anotação completa em
+      <code class="font-mono text-[0.92em] px-1 py-0.5 rounded" style="background:var(--bg-elevated)">docs/curso-apis-ia-generativa/modulo07/</code>.
+    </div>
+  </aside>
+  <main class="flex-1 min-w-0 w-full px-6 md:px-10 lg:px-16 py-12 pb-24">
+    <div class="flex flex-wrap items-baseline gap-3 mb-1">
+      <span class="font-mono text-[0.72rem] tracking-[0.1em] uppercase" style="color:var(--accent-route)" id="lessonEyebrow"></span>
+    </div>
+    <h2 class="font-display text-[clamp(1.6rem,3vw,2.15rem)] leading-tight mt-1.5 mb-4 text-balance" id="lessonTitle"></h2>
+    <span id="docTag"></span>
+    <article class="content w-full" id="content"></article>
+  </main>
+</div>
+
+<script type="text/plain" id="doc-01-artigo">
+# Multimodalidade e observabilidade: fechando o ciclo de produção
+
+> Este artigo cobre as 2 aulas finais do curso. Diferente dos módulos anteriores, aqui não há um projeto novo construído passo a passo — as aulas são um panorama de dois temas (entrada multimodal e observabilidade) com projetos de referência já prontos, por isso não há um tutorial separado: o conteúdo prático relevante já está resumido abaixo.
+
+## Aula 1 — Modelos multimodais: além de texto puro
+
+Um modelo **multimodal** é aquele que recebe (e às vezes também produz) mais do que texto — imagens, documentos, áudio, vídeo. A boa notícia mostrada na aula é que, tecnicamente, **quase nada muda** na estrutura já usada nos módulos anteriores: em vez de mandar só uma mensagem de texto para o modelo, você inclui um campo adicional apontando para o arquivo (uma URL ou o conteúdo em base64), e o resto do fluxo (prompt, schema de saída, tratamento de erro) permanece igual.
+
+### O padrão: `generateWithDocument`
+
+A diferença central em relação ao que já foi construído é uma função adicional no serviço de LLM que aceita um documento (imagem ou PDF) além da pergunta:
+
+```typescript
+async generateWithDocument(question: string, fileBase64: string): Promise<LlmResponse> {
+  const response = await this.client.chat.completions.create({
+    models: this.config.models,
+    messages: [
+      { role: "system", content: this.config.systemPrompt },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: question },
+          { type: "image_url", image_url: { url: `data:application/pdf;base64,${fileBase64}` } },
+        ],
+      },
+    ],
+  });
+
+  return { model: response.model, content: response.choices[0]?.message?.content ?? "" };
+}
+```
+
+Note que o campo se chama `image_url` mesmo quando o conteúdo é um PDF — uma particularidade da API que a aula observa ser um pouco confusa, mas que funciona igual para diferentes tipos de arquivo.
+
+### Limitação prática: o arquivo inteiro precisa ser enviado de uma vez
+
+Um ponto de atenção: o endpoint usado não suporta enviar um documento em pedaços — o arquivo completo precisa ir em uma única requisição, em base64. Para arquivos muito grandes, isso pode ser inviável (tanto por tamanho de payload quanto por custo de tokens). Uma alternativa mencionada como prática mais comum em produção: fazer o **parse do documento no seu próprio servidor** (extrair o texto de um PDF, por exemplo) e enviar apenas o **texto extraído** para o modelo, em vez do arquivo bruto — voltando ao fluxo de texto puro já conhecido.
+
+### Modelos de áudio e "realtime": o próximo nível
+
+A aula também explora, em nível conceitual, modelos de **áudio** (enviar voz diretamente para o modelo, sem passar por transcrição manual) e modelos de **realtime** (uma conexão contínua — via WebRTC, WebSocket ou VoIP — onde o modelo escuta e responde em tempo real, sem o ciclo tradicional de "manda requisição, espera resposta"). O caso de uso mais citado é substituir centrais de atendimento telefônico tradicionais (aquelas de "aperte 1 para...") por um agente que entende a intenção da pessoa diretamente pela fala.
+
+Dois pontos práticos de atenção citados:
+- Modelos de áudio/realtime **custam significativamente mais** que os equivalentes de texto — a aula reforça que isso muda a equação de custo do projeto e deve ser avaliado com cuidado antes de adotar.
+- Para a maioria dos projetos pessoais e de médio porte, uma abordagem mais simples (usuário aperta um botão para gravar, ou detecção de palavra-chave para iniciar a gravação, seguida de transcrição tradicional) já é suficiente — realtime nativo tende a fazer mais sentido para produtos de grande escala com investimento dedicado a essa experiência.
+
+## Aula 2 — Observabilidade: sem monitoramento, você está no escuro
+
+A segunda aula final do curso trata de um tema que se torna crítico assim que uma aplicação de IA vai para produção: **como saber o que está acontecendo** — quanto está sendo gasto, quais prompts estão sendo executados, onde estão os gargalos de latência, se algum cliente está abusando do sistema.
+
+### Duas formas de monitorar
+
+1. **No próprio provedor de LLM** (OpenRouter, OpenAI, Anthropic): configurar alertas e limites de uso diretamente no painel — a forma mais simples, mas limitada ao que o provedor expõe.
+2. **Infraestrutura própria de observabilidade**: instrumentar a aplicação para registrar cada chamada de LLM (entrada, saída, latência, tokens usados, custo) em uma ferramenta dedicada — dando visibilidade completa e customizável.
+
+### LangFuse: tracing especializado em aplicações de IA
+
+A ferramenta destacada é o **LangFuse** (open source, com opção de self-hosting), que registra o que a aula chama de **tracing**: o caminho completo de uma requisição — de onde veio, que operação foi executada (chamada de modelo, uso de ferramenta MCP, function call), quanto tempo levou em cada etapa, e quanto custou. Isso é equivalente ao conceito de *tracing* já usado em observabilidade de sistemas tradicionais, só que aplicado especificamente a chamadas de LLM.
+
+A integração é feita via **OpenTelemetry** (um padrão de instrumentação já usado em observabilidade de software em geral, não exclusivo de IA) — o que significa que, se sua aplicação já tem OpenTelemetry configurado (como o exemplo de monitoramento do módulo 1 do curso), adicionar o LangFuse é principalmente uma questão de configurar variáveis de ambiente apontando para o coletor, sem reescrever a instrumentação do zero.
+
+### Gestão de prompts e "evaluation": medir qualidade, não só custo
+
+Um conceito adicional trazido pela aula, além do monitoramento de custo/latência: **prompt management** — versionar e comparar prompts fora do código da aplicação, permitindo testar variações e medir qual delas performa melhor sem precisar fazer deploy de código novo.
+
+Ligado a isso está o conceito de **evaluation**: como os módulos anteriores já mostraram, respostas de LLM não são determinísticas — o mesmo prompt pode gerar textos diferentes (mas semanticamente equivalentes) em execuções diferentes. Isso torna testes automatizados tradicionais (comparar string exata) inadequados para validar a *qualidade* da resposta em si — só a estrutura dos dados (como já vinha sendo validado via schemas Zod nos módulos anteriores). Evaluation resolve essa lacuna atribuindo **pontuações de qualidade** às respostas geradas, de forma sistemática — inclusive integrável a pipelines de CI/CD, para detectar quando uma mudança de prompt piora a qualidade das respostas antes de ir para produção.
+
+## O fio condutor do curso, revisitado
+
+Essas duas aulas finais amarram um tema que atravessou o curso inteiro: **usar IA em produção exige a mesma disciplina de engenharia de software que qualquer outro sistema** — só que aplicada a um componente nem sempre determinístico. Multimodalidade estende o tipo de entrada que o sistema aceita; observabilidade garante que, uma vez em produção, existam dados reais (não suposições) para decidir onde otimizar custo, corrigir prompts ou investigar comportamento inesperado.
+
+## Verifique seu entendimento
+
+1. O que muda estruturalmente no código para dar suporte a documentos/imagens, em relação ao fluxo de texto já construído nos módulos anteriores?
+2. Por que enviar o texto já extraído de um PDF pode ser preferível a enviar o arquivo bruto para o modelo?
+3. Qual a diferença entre o modelo tradicional de "requisição e resposta" e um modelo de "realtime" para áudio?
+4. O que é *tracing* no contexto de observabilidade de aplicações de IA, e por que ele é mais detalhado do que só "logar erros"?
+5. Por que testes automatizados tradicionais (comparação exata de string) não são suficientes para validar a qualidade de respostas geradas por LLM, e como o conceito de *evaluation* resolve isso?
+</script>
+
+<script>
+const LESSONS = [
+  {
+    "id": "01-artigo",
+    "file": "01-artigo-multimodalidade-e-observabilidade.md",
+    "aula": 1,
+    "tipo": "artigo",
+    "title": "Multimodalidade e observabilidade: fechando o ciclo de produção",
+    "label": "Multimodalidade e observabilidade"
+  }
+];
+const FILE_TO_ID = {
+  "01-artigo-multimodalidade-e-observabilidade.md": "01-artigo"
+};
+
+const STATIONS = [1].map((aula) => ({
+  aula,
+  docs: LESSONS.filter((l) => l.aula === aula),
+}));
+
+const STATION_EYEBROW = {
+  artigo: "Aulas 1-2",
+};
+const TIPO_LABEL = {
+  artigo: "conceito",
+};
+const TIPO_TAG = { artigo: "Artigo" };
+const DOT_LABEL = { artigo: "1-2" };
+const TIPO_COLORS = {
+  artigo: "bg-[var(--accent-artigo-soft)] text-[var(--accent-artigo)]",
+};
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function inline(text) {
+  let t = escapeHtml(text);
+  t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+  t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, href) => {
+    const targetId = FILE_TO_ID[href];
+    if (targetId) {
+      return '<button type="button" class="inline-link" data-nav="' + targetId + '">' + label + "</button>";
+    }
+    return label;
+  });
+  return t;
+}
+
+function renderTable(headerLine, bodyLines) {
+  const splitRow = (line) =>
+    line
+      .split("|")
+      .map((s) => s.trim())
+      .filter((s, idx, arr) => !(idx === 0 && s === "") && !(idx === arr.length - 1 && s === ""));
+  const header = splitRow(headerLine);
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  header.forEach((h) => (html += "<th>" + inline(h) + "</th>"));
+  html += "</tr></thead><tbody>";
+  bodyLines.forEach((line) => {
+    const cells = splitRow(line);
+    html += "<tr>";
+    cells.forEach((c) => (html += "<td>" + inline(c) + "</td>"));
+    html += "</tr>";
+  });
+  html += "</tbody></table></div>";
+  return html;
+}
+
+function buildList(items) {
+  let idx = 0;
+  function parseLevel(indent) {
+    let out = "";
+    let type = "ul";
+    while (idx < items.length && items[idx].indent >= indent) {
+      const item = items[idx];
+      type = item.ordered ? "ol" : "ul";
+      idx++;
+      let child = "";
+      if (idx < items.length && items[idx].indent > indent) {
+        child = parseLevel(items[idx].indent);
+      }
+      out += "<li>" + inline(item.text) + child + "</li>";
+    }
+    return "<" + type + ">" + out + "</" + type + ">";
+  }
+  return parseLevel(items[0] ? items[0].indent : 0);
+}
+
+function isTableSeparator(line) {
+  return /^\s*\|?[\s:-]+\|[\s:|-]*$/.test(line) && line.includes("-");
+}
+
+const JS_KEYWORDS = new Set([
+  "import", "export", "default", "from", "as", "const", "let", "var", "function",
+  "return", "if", "else", "for", "while", "do", "switch", "case", "break", "continue",
+  "async", "await", "new", "type", "interface", "class", "extends", "implements",
+  "typeof", "instanceof", "in", "of", "this", "super", "static", "public", "private",
+  "protected", "readonly", "enum", "void", "throw", "try", "catch", "finally", "yield",
+  "delete", "true", "false", "null", "undefined",
+]);
+
+function highlightCode(code) {
+  const tokenRegex =
+    /(\/\/[^\n]*)|(\/\*[\s\S]*?\*\/)|(`(?:\\.|[^`\\])*`)|("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][A-Za-z0-9_$]*)|(\s+)|([^\sA-Za-z0-9_$'"`]+)|(.)/g;
+  let out = "";
+  let m;
+  while ((m = tokenRegex.exec(code))) {
+    if (m[1] || m[2]) {
+      out += '<span class="tok-comment">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[3] || m[4] || m[5]) {
+      out += '<span class="tok-string">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[6]) {
+      out += '<span class="tok-number">' + escapeHtml(m[0]) + "</span>";
+    } else if (m[7]) {
+      const word = m[0];
+      if (JS_KEYWORDS.has(word)) {
+        out += '<span class="tok-keyword">' + escapeHtml(word) + "</span>";
+      } else if (/^[A-Z]/.test(word)) {
+        out += '<span class="tok-type">' + escapeHtml(word) + "</span>";
+      } else if (/^\s*\(/.test(code.slice(tokenRegex.lastIndex))) {
+        out += '<span class="tok-func">' + escapeHtml(word) + "</span>";
+      } else {
+        out += escapeHtml(word);
+      }
+    } else {
+      out += escapeHtml(m[0]);
+    }
+  }
+  return out;
+}
+
+function parseMarkdown(md) {
+  const lines = md.split("\n");
+  let html = "";
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (/^\s*$/.test(line)) {
+      i++;
+      continue;
+    }
+
+    const fence = line.match(/^```(\w*)/);
+    if (fence) {
+      const lang = fence[1] || "texto";
+      const codeLines = [];
+      i++;
+      while (i < lines.length && !/^```/.test(lines[i])) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      i++;
+      html +=
+        '<div class="code-card"><div class="code-lang">' +
+        escapeHtml(lang) +
+        "</div><pre><code>" +
+        highlightCode(codeLines.join("\n")) +
+        "</code></pre></div>";
+      continue;
+    }
+
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if (h) {
+      const level = h[1].length;
+      html += "<h" + level + ">" + inline(h[2]) + "</h" + level + ">";
+      i++;
+      continue;
+    }
+
+    if (/^-{3,}\s*$/.test(line)) {
+      html += "<hr>";
+      i++;
+      continue;
+    }
+
+    if (/^>\s?/.test(line)) {
+      const qLines = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        qLines.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      html += "<blockquote>" + parseMarkdown(qLines.join("\n")) + "</blockquote>";
+      continue;
+    }
+
+    if (line.includes("|") && lines[i + 1] && isTableSeparator(lines[i + 1])) {
+      const headerLine = line;
+      const bodyLines = [];
+      i += 2;
+      while (i < lines.length && lines[i].includes("|") && lines[i].trim() !== "") {
+        bodyLines.push(lines[i]);
+        i++;
+      }
+      html += renderTable(headerLine, bodyLines);
+      continue;
+    }
+
+    if (/^\s*(-\s+|\d+\.\s+)/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*(-\s+|\d+\.\s+)/.test(lines[i])) {
+        const m = lines[i].match(/^(\s*)(-\s+|(\d+)\.\s+)(.*)$/);
+        items.push({ indent: m[1].length, ordered: !!m[3], text: m[4] });
+        i++;
+      }
+      html += buildList(items);
+      continue;
+    }
+
+    const pLines = [];
+    while (
+      i < lines.length &&
+      lines[i].trim() !== "" &&
+      !/^(#{1,4}\s|```|>\s?|-{3,}\s*$|\s*(-\s+|\d+\.\s+))/.test(lines[i])
+    ) {
+      pLines.push(lines[i]);
+      i++;
+    }
+    if (pLines.length) {
+      html += "<p>" + inline(pLines.join(" ")) + "</p>";
+    } else {
+      i++;
+    }
+  }
+  return html;
+}
+
+const FLAT_ORDER = LESSONS.map((l) => l.id);
+let currentId = FLAT_ORDER[0];
+
+function renderRoute() {
+  const routeEl = document.getElementById("route");
+  routeEl.innerHTML = "";
+  STATIONS.forEach((station) => {
+    const wrap = document.createElement("div");
+    wrap.className = "relative flex gap-3.5 py-0.5 pl-1";
+
+    const dot = document.createElement("div");
+    dot.className =
+      "flex-none w-6 h-6 rounded-full border-2 grid place-items-center font-mono text-[0.65rem] z-10 border-[var(--accent-route)] bg-[var(--accent-route)] text-[var(--bg)]";
+    dot.textContent = DOT_LABEL[station.docs[0].tipo];
+    wrap.appendChild(dot);
+
+    const label = document.createElement("div");
+    label.className = "flex-1 text-left px-2 pt-1 pb-3 rounded-lg text-[var(--ink)]";
+    const first = station.docs[0];
+    label.innerHTML =
+      '<div class="font-mono text-[0.62rem] tracking-[0.08em] uppercase text-[var(--ink-faint)]">' +
+      STATION_EYEBROW[first.tipo] +
+      '</div><div class="text-[0.88rem] leading-snug mt-0.5 font-semibold">' +
+      escapeHtml(first.label) +
+      "</div>";
+    wrap.appendChild(label);
+    routeEl.appendChild(wrap);
+  });
+}
+
+function renderLesson(id) {
+  const doc = LESSONS.find((l) => l.id === id);
+  if (!doc) return;
+  currentId = id;
+
+  document.getElementById("lessonEyebrow").textContent =
+    STATION_EYEBROW[doc.tipo] + " · " + TIPO_LABEL[doc.tipo];
+  document.getElementById("lessonTitle").textContent = doc.title;
+
+  const tagEl = document.getElementById("docTag");
+  tagEl.className =
+    "inline-block font-mono text-[0.68rem] tracking-[0.06em] uppercase px-2 py-0.5 rounded-md mb-5 " +
+    TIPO_COLORS[doc.tipo];
+  tagEl.textContent = TIPO_TAG[doc.tipo];
+
+  const raw = document.getElementById("doc-" + id).textContent;
+  document.getElementById("content").innerHTML = parseMarkdown(raw);
+
+  renderRoute();
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+}
+
+document.getElementById("content").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-nav]");
+  if (btn) navigateTo(btn.dataset.nav);
+});
+
+function navigateTo(id) {
+  renderLesson(id);
+}
+
+renderLesson(currentId);
+</script>
+</body>
+</html>

@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Questionário geral — Curso APIs de IA Generativa</title>
+<style>
+:root {
+  --bg: #eef1ef;
+  --bg-elevated: #e2e8e2;
+  --ink: #171b18;
+  --ink-soft: #4a534c;
+  --ink-faint: #6f786f;
+  --line: #c7d0c7;
+  --accent-route: #b8862e;
+  --accent-route-soft: #b8862e33;
+  --accent-easy: #2f8f82;
+  --accent-easy-soft: #2f8f8222;
+  --accent-medium: #b8862e;
+  --accent-medium-soft: #b8862e22;
+  --accent-hard: #c1554a;
+  --accent-hard-soft: #c1554a22;
+  --font-display: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151a;
+    --bg-elevated: #191d22;
+    --ink: #e7ebe8;
+    --ink-soft: #aab3ac;
+    --ink-faint: #7c877e;
+    --line: #2b3230;
+    --accent-route: #e0ac4a;
+    --accent-route-soft: #e0ac4a2b;
+    --accent-easy: #4fb3a9;
+    --accent-easy-soft: #4fb3a92b;
+    --accent-medium: #e0ac4a;
+    --accent-medium-soft: #e0ac4a2b;
+    --accent-hard: #e07a6d;
+    --accent-hard-soft: #e07a6d2b;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151a; --bg-elevated: #191d22; --ink: #e7ebe8; --ink-soft: #aab3ac; --ink-faint: #7c877e; --line: #2b3230;
+  --accent-route: #e0ac4a; --accent-route-soft: #e0ac4a2b;
+  --accent-easy: #4fb3a9; --accent-easy-soft: #4fb3a92b;
+  --accent-medium: #e0ac4a; --accent-medium-soft: #e0ac4a2b;
+  --accent-hard: #e07a6d; --accent-hard-soft: #e07a6d2b;
+}
+:root[data-theme="light"] {
+  --bg: #eef1ef; --bg-elevated: #e2e8e2; --ink: #171b18; --ink-soft: #4a534c; --ink-faint: #6f786f; --line: #c7d0c7;
+  --accent-route: #b8862e; --accent-route-soft: #b8862e33;
+  --accent-easy: #2f8f82; --accent-easy-soft: #2f8f8222;
+  --accent-medium: #b8862e; --accent-medium-soft: #b8862e22;
+  --accent-hard: #c1554a; --accent-hard-soft: #c1554a22;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 5rem;
+}
+a { color: var(--accent-route); }
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink-faint);
+  text-decoration: none;
+  margin-bottom: 1.4rem;
+}
+h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 4vw, 2.1rem);
+  margin: 0 0 0.3em;
+  text-wrap: balance;
+}
+p.subtitle { color: var(--ink-soft); margin: 0 0 1.8rem; }
+
+.panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.3rem 1.4rem;
+  margin-bottom: 1.6rem;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+.stat-num { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: var(--ink); }
+.stat-label { font-size: 0.74rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.1em; }
+
+.btn-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+button {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.6rem 1.1rem;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+button:hover { border-color: var(--accent-route); color: var(--accent-route); }
+button.primary { background: var(--accent-route); border-color: var(--accent-route); color: var(--bg); }
+button.primary:hover { color: var(--bg); opacity: 0.9; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.small { font-size: 0.76rem; padding: 0.4rem 0.75rem; }
+
+.badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.18em 0.55em;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.badge.facil { background: var(--accent-easy-soft); color: var(--accent-easy); }
+.badge.medio { background: var(--accent-medium-soft); color: var(--accent-medium); }
+.badge.dificil { background: var(--accent-hard-soft); color: var(--accent-hard); }
+.badge.modulo { background: var(--bg); color: var(--ink-faint); border: 1px solid var(--line); }
+
+.question-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.4rem 1.5rem;
+  margin-bottom: 1.3rem;
+  background: var(--bg);
+}
+.q-meta { display: flex; gap: 0.5rem; margin-bottom: 0.7rem; }
+.q-text { font-weight: 600; margin-bottom: 1rem; color: var(--ink); }
+.options { display: flex; flex-direction: column; gap: 0.5rem; }
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.option:hover { border-color: var(--accent-route); }
+.option input { margin-top: 0.3em; accent-color: var(--accent-route); flex-shrink: 0; }
+.option .letter { font-family: var(--font-mono); font-weight: 700; color: var(--ink-faint); flex-shrink: 0; }
+.option span.txt { color: var(--ink-soft); }
+.option.is-correct { border-color: var(--accent-easy); background: var(--accent-easy-soft); }
+.option.is-correct span.txt { color: var(--ink); }
+.option.is-wrong { border-color: var(--accent-hard); background: var(--accent-hard-soft); }
+.option.is-wrong span.txt { color: var(--ink); }
+.feedback { margin-top: 0.7em; font-size: 0.85rem; font-weight: 600; min-height: 1.2em; }
+.feedback.ok { color: var(--accent-easy); }
+.feedback.bad { color: var(--accent-hard); }
+
+.empty-state { text-align: center; padding: 2rem 1rem; color: var(--ink-soft); }
+.footer-note { font-size: 0.78rem; color: var(--ink-faint); margin-top: 2rem; }
+.footer-note code { font-family: var(--font-mono); background: var(--bg-elevated); padding: 0.1em 0.4em; border-radius: 5px; }
+#importInput { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <a href="index.html" class="back-link">&larr; Início</a>
+  <h1>Questionário geral</h1>
+  <p class="subtitle">50 perguntas de múltipla escolha (a–e) cobrindo os 7 módulos do curso, em três níveis de dificuldade. Cada rodada sorteia 10 perguntas priorizando as que você ainda não respondeu.</p>
+
+  <div class="panel">
+    <div class="stats-grid">
+      <div><div class="stat-num" id="statTotal">0</div><div class="stat-label">total</div></div>
+      <div><div class="stat-num" id="statRespondidas">0</div><div class="stat-label">respondidas</div></div>
+      <div><div class="stat-num" id="statAcertos">0</div><div class="stat-label">acertos</div></div>
+      <div><div class="stat-num" id="statPendentes">0</div><div class="stat-label">nunca vistas</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="primary" id="btnNovaRodada">Nova rodada (10 perguntas)</button>
+      <button class="small" id="btnExportar">Exportar progresso (.json)</button>
+      <button class="small" id="btnImportar">Importar progresso (.json)</button>
+      <button class="small" id="btnResetar">Zerar progresso</button>
+    </div>
+    <input type="file" id="importInput" accept="application/json" />
+  </div>
+
+  <div id="quizArea"></div>
+
+  <p class="footer-note">
+    Progresso salvo automaticamente neste navegador (<code>localStorage</code>). Como é uma página estática (sem servidor),
+    use <strong>Exportar</strong> para baixar um arquivo <code>.json</code> com suas respostas — e <strong>Importar</strong>
+    para recarregar esse progresso neste ou em outro navegador/computador.
+  </p>
+</main>
+
+<script>
+const QUESTIONS = [
+  { id:"m1-01", modulo:1, nivel:"facil", pergunta:"O que é um \"wrapper\" de IA, segundo o módulo 1?", opcoes:["Um serviço que hospeda modelos de IA localmente","Uma aplicação cujo diferencial é quase inteiramente a chamada a um modelo de LLM de terceiros","Um framework de testes para APIs de IA","Um tipo de banco de dados vetorial","Um provedor de LLM que compete com a OpenAI"], correta:1 },
+  { id:"m1-02", modulo:1, nivel:"facil", pergunta:"Qual serviço funciona como um \"gateway\" entre o código e dezenas de modelos de LLM de provedores diferentes?", opcoes:["LangSmith","LangGraph Studio","OpenRouter","Fastify","Zod"], correta:2 },
+  { id:"m1-03", modulo:1, nivel:"medio", pergunta:"Segundo o módulo 1, qual NÃO é um dos fatores citados para wrappers de IA levantarem investimento e crescerem rápido?", opcoes:["A API de LLM virou uma commodity","O time-to-demo é curtíssimo","O modelo melhora sozinho quando o provedor lança uma versão nova","Mudança de comportamento do usuário, mais disposto a delegar tarefas à IA","A exigência legal de auditoria de IA em todos os países"], correta:4 },
+  { id:"m1-04", modulo:1, nivel:"medio", pergunta:"No OpenRouter, em vez de fixar um modelo específico por nome, o padrão recomendado é:", opcoes:["Sempre usar o modelo mais caro disponível, para garantir qualidade","Definir uma lista de modelos candidatos e um critério de ordenação (ex: mais barato, maior throughput)","Hospedar o próprio modelo em um servidor dedicado","Usar sempre o primeiro modelo da lista, sem nenhum critério","Alternar aleatoriamente entre todos os modelos disponíveis"], correta:1 },
+  { id:"m1-05", modulo:1, nivel:"facil", pergunta:"O que o app.inject() do Fastify permite fazer nos testes?", opcoes:["Subir um servidor real ocupando uma porta de rede","Simular uma requisição HTTP sem precisar de servidor real nem porta de rede","Substituir o Fastify por outro framework","Gerar automaticamente a documentação da API","Criptografar o corpo da requisição"], correta:1 },
+  { id:"m1-06", modulo:1, nivel:"dificil", pergunta:"Por que o tutorial do módulo 1 recomenda anotar, no próprio teste automatizado, qual modelo era esperado \"no momento em que o teste foi escrito\"?", opcoes:["Porque o OpenRouter exige essa anotação por contrato","Porque preços e desempenho de modelos mudam com o tempo, então testes que fixam o nome esperado podem quebrar sem indicar um bug real","Porque o Fastify não permite testes sem essa anotação","Porque isso é exigido pelo TypeScript em modo strict","Porque sem isso o LangSmith não gera o rastreamento (tracing)"], correta:1 },
+  { id:"m1-07", modulo:1, nivel:"dificil", pergunta:"Qual é a diferença de responsabilidade entre a rota HTTP e o OpenRouterService, no princípio de separação usado no módulo 1?", opcoes:["A rota cuida de tudo; o serviço só existe para testes","O serviço cuida de \"receber e validar requisição\"; a rota cuida de \"falar com o provedor e escolher modelo\"","A rota cuida de \"receber e validar requisição\"; o serviço cuida de \"falar com o provedor e escolher modelo\" — trocar de provedor no futuro só exige mudar o serviço","Não há separação: ambos fazem a mesma coisa por redundância","A rota só existe em produção; o serviço só em desenvolvimento"], correta:2 },
+  { id:"m1-08", modulo:1, nivel:"medio", pergunta:"Por que o texto argumenta que \"a parte difícil nunca foi chamar a API\" de um LLM?", opcoes:["Porque chamar a API é tecnicamente impossível sem um SDK pago","Porque as partes difíceis são identificar a dor de mercado, colocar camadas de segurança, aplicar engenharia tradicional e controlar custo/alucinação","Porque o verdadeiro desafio é aprender a sintaxe de cada linguagem de programação","Porque nenhuma API de LLM documenta seus endpoints","Porque só empresas grandes conseguem pagar pelo acesso a uma API de LLM"], correta:1 },
+
+  { id:"m2-01", modulo:2, nivel:"facil", pergunta:"No LangGraph, o que é o \"estado\" (state) de um grafo?", opcoes:["Um banco de dados externo de logs","Uma \"ficha de anotações\" que passa de nó em nó, sendo lida e atualizada em cada etapa","O status HTTP retornado pela API","Um arquivo de configuração fixo, definido uma única vez","O nome do modelo de LLM usado no grafo"], correta:1 },
+  { id:"m2-02", modulo:2, nivel:"facil", pergunta:"Qual biblioteca é usada para descrever e validar o formato do estado do grafo?", opcoes:["Joi","Yup","Zod","Ajv","class-validator"], correta:2 },
+  { id:"m2-03", modulo:2, nivel:"medio", pergunta:"Por que messages: z.custom<BaseMessage[]>().default(() => []) usa uma função que retorna [], em vez de [] diretamente?", opcoes:["Por exigência de sintaxe do TypeScript","Para evitar que todas as execuções do grafo compartilhem a mesma instância de array por referência","Porque arrays não podem ser valores padrão em Zod","Para melhorar a performance de serialização JSON","Porque [] sozinho gera erro de tipo no Zod"], correta:1 },
+  { id:"m2-04", modulo:2, nivel:"facil", pergunta:"Qual é a assinatura fixa de todo nó (node) no LangGraph, segundo o módulo 2?", opcoes:["(request, response) => void","(state) => state — recebe o estado atual e devolve o estado, atualizado ou não","(error) => void","() => Promise<string>","(schema) => boolean"], correta:1 },
+  { id:"m2-05", modulo:2, nivel:"medio", pergunta:"O que faz uma \"aresta condicional\" (conditional edge) no LangGraph?", opcoes:["Liga sempre dois nós fixos, sem exceção","Usa uma função que examina o estado e decide, em tempo de execução, para qual nó ir","Apenas registra logs sem alterar o fluxo","Só pode ser usada entre START e END","Substitui a necessidade de nós no grafo"], correta:1 },
+  { id:"m2-06", modulo:2, nivel:"dificil", pergunta:"No exemplo do módulo 2, qual bug foi identificado na primeira versão do fallbackNode, e qual foi a correção?", opcoes:["Ele travava o grafo em loop infinito; a correção foi remover a aresta condicional","Ele criava sua própria AIMessage e o chatResponse também criava outra sobre o mesmo texto, duplicando a mensagem; a correção foi o fallbackNode parar de criar AIMessage","Ele não validava o schema Zod; a correção foi adicionar safeParse","Ele chamava a API do OpenRouter sem necessidade; a correção foi cachear a resposta","Ele esquecia de retornar output; a correção foi adicionar um valor padrão fixo"], correta:1 },
+  { id:"m2-07", modulo:2, nivel:"medio", pergunta:"Para que serve addConditionalEdges(origem, funçãoRoteamento, mapaDeTradução) no LangGraph?", opcoes:["Para definir o schema de estado do grafo","Para registrar um nó de origem, uma função de decisão, e um mapa que traduz a string retornada para o identificador real do próximo nó","Para configurar o LangSmith","Para definir o critério de seleção de modelo do OpenRouter","Para compilar o grafo em um objeto executável"], correta:1 },
+  { id:"m2-08", modulo:2, nivel:"facil", pergunta:"O que exibe o LangGraph Studio?", opcoes:["Apenas os logs de erro do servidor","Uma interface visual local que mostra o grafo da aplicação, permitindo interagir por chat sem construir frontend","Um dashboard de custos do OpenRouter","A documentação automática da API REST","O histórico de commits do projeto"], correta:1 },
+
+  { id:"m3-01", modulo:3, nivel:"facil", pergunta:"No módulo 3, o que faz llmClient.withStructuredOutput(schema)?", opcoes:["Converte o schema Zod em JSON Schema manualmente pelo desenvolvedor","Instrui o modelo a devolver dados já validados contra um schema Zod, sem precisar chamar JSON.parse manualmente","Desativa a validação de tipos em tempo de execução","Troca automaticamente o modelo de LLM usado","Faz cache da resposta do modelo por 24 horas"], correta:1 },
+  { id:"m3-02", modulo:3, nivel:"medio", pergunta:"Por que scheduleNode e cancelNode fazem sua própria validação com Zod, mesmo recebendo dados que a IA já deveria ter validado em identifyIntent?", opcoes:["Porque o Zod é obrigatório em todo nó, independente do contexto","Pelo princípio \"confio, mas confiro\" — cada nó trata a etapa anterior como não confiável, como microsserviços independentes","Porque identifyIntent não usa nenhum tipo de validação","Para reduzir o número de chamadas à API do OpenRouter","Porque o LangGraph exige validação duplicada por padrão"], correta:1 },
+  { id:"m3-03", modulo:3, nivel:"facil", pergunta:"No fluxo do módulo 3, qual nó decide se a intenção do cliente é agendar, cancelar ou desconhecida?", opcoes:["chatResponse","scheduleNode","identifyIntent","messageGeneratorNode","cancelNode"], correta:2 },
+  { id:"m3-04", modulo:3, nivel:"dificil", pergunta:"Por que identifyIntent e messageGeneratorNode recebem o cliente de LLM como dependência, mas scheduleNode e cancelNode não?", opcoes:["Porque só os dois primeiros precisam de IA (interpretar linguagem natural e gerar mensagem); os outros só processam dados estruturados","Porque scheduleNode e cancelNode são executados fora do grafo","Porque o LangGraph limita a 2 o número de nós que podem usar IA","Porque scheduleNode e cancelNode usam um modelo de IA diferente, mais barato","É uma escolha arbitrária, sem motivo técnico"], correta:0 },
+  { id:"m3-05", modulo:3, nivel:"medio", pergunta:"O que o campo scenario (ex: \"schedule_success\", \"cancel_error\") faz no prompt do messageGeneratorNode?", opcoes:["Define qual banco de dados será consultado","Ajuda o modelo a escolher o tom certo de resposta para cada combinação de intenção e resultado","Substitui a necessidade do campo intent","É usado apenas para fins de log, sem efeito no prompt","Define o idioma da resposta"], correta:1 },
+  { id:"m3-06", modulo:3, nivel:"facil", pergunta:"Qual SDK o módulo 3 passa a usar para chamar o OpenRouter, em vez do SDK nativo usado no módulo 1?", opcoes:["O SDK do Google Gemini","O SDK da própria OpenAI, apontando para a URL do OpenRouter, para usar response_format estruturado nativamente","Um SDK criado do zero pelo próprio projeto","O SDK oficial da Anthropic","Não há mudança de SDK entre os módulos"], correta:1 },
+  { id:"m3-07", modulo:3, nivel:"dificil", pergunta:"No scheduleNode, o que aconteceria se a validação ScheduleRequiredSchema.safeParse(state) falhasse?", opcoes:["O processo Node.js encerraria imediatamente","O nó lançaria uma exceção não tratada","O nó retornaria { actionSuccess: false, actionError: errorMessages }, sem tentar agendar","O grafo tentaria automaticamente rotear para cancelNode","A validação seria ignorada e o agendamento prosseguiria mesmo assim"], correta:2 },
+
+  { id:"m4-01", modulo:4, nivel:"facil", pergunta:"No módulo 4, qual banco é usado para o histórico de mensagens (checkpoints) e qual para as preferências do usuário?", opcoes:["Ambos usam SQLite","Postgres para histórico/checkpoints; SQLite para preferências","MongoDB para histórico; Neo4j para preferências","Ambos usam Postgres","Redis para histórico; Postgres para preferências"], correta:1 },
+  { id:"m4-02", modulo:4, nivel:"medio", pergunta:"Qual é a diferença de papel entre checkpointer e store no LangGraph, mesmo apontando para o mesmo Postgres?", opcoes:["Não há diferença, são sinônimos","checkpointer guarda o estado do grafo por thread (retomar de onde parou); store guarda dados que sobrevivem entre threads diferentes do mesmo usuário","checkpointer é usado só em testes; store só em produção","checkpointer guarda preferências; store guarda o histórico de mensagens","store é depreciado e substituído por checkpointer"], correta:1 },
+  { id:"m4-03", modulo:4, nivel:"facil", pergunta:"O que mergePreferences faz de diferente de simplesmente sobrescrever o registro do usuário?", opcoes:["Apaga todas as preferências antigas antes de salvar as novas","Mescla o dado novo com o que já existia, para não perder informação de conversas anteriores","Envia um e-mail de confirmação ao usuário","Salva as preferências em um arquivo de texto separado","Ignora qualquer dado novo se já houver um registro salvo"], correta:1 },
+  { id:"m4-04", modulo:4, nivel:"dificil", pergunta:"Para que serve o tipo especial RemoveMessage do LangGraph, usado no summarizeNode?", opcoes:["Para apagar mensagens ofensivas automaticamente via IA","Quando incluído no retorno de um nó, instrui o reducer de mensagens a remover aquela mensagem específica do estado, em vez de adicionar mais uma","Para desfazer a última ação do usuário","Para marcar mensagens como lidas","Para criptografar mensagens antigas antes de arquivá-las"], correta:1 },
+  { id:"m4-05", modulo:4, nivel:"medio", pergunta:"Como needsSummarization é calculado no chatNode do módulo 4?", opcoes:["Comparando o tamanho atual do histórico de mensagens com um limite configurável (maxMessagesToSummarize)","Perguntando diretamente ao usuário se ele quer um resumo","Sempre true, a cada mensagem","Com base no tempo decorrido desde a última mensagem","Com base no número de preferências já salvas"], correta:0 },
+  { id:"m4-06", modulo:4, nivel:"dificil", pergunta:"Se maxMessagesToSummarize fosse aumentado de 6 para 200, qual seria o principal trade-off?", opcoes:["Nenhum — o valor não afeta custo nem comportamento","O histórico ficaria maior antes de ser resumido, aumentando o custo de tokens por chamada, mas resumindo com menos frequência","O sistema pararia de funcionar após 200 mensagens","As preferências do usuário deixariam de ser salvas","O Postgres seria substituído automaticamente por SQLite"], correta:1 },
+  { id:"m4-07", modulo:4, nivel:"facil", pergunta:"Por que o projeto do módulo 4 roda como script de linha de comando, em vez de expor uma rota HTTP como nos módulos anteriores?", opcoes:["Porque o Fastify não suporta esse tipo de aplicação","Para facilitar observar a conversa evoluindo, retomando de onde parou entre execuções com o mesmo --user","Porque o OpenRouter não pode ser chamado via HTTP","Porque LangGraph não permite rotas HTTP","Por exigência do Postgres"], correta:1 },
+
+  { id:"m5-01", modulo:5, nivel:"facil", pergunta:"O que é \"prompt injection\", segundo o módulo 5?", opcoes:["Um bug de performance que deixa o modelo mais lento","A técnica de manipular a entrada do usuário para fazer o modelo ignorar suas instruções originais e seguir instruções diferentes","Um recurso oficial do LangChain para testar múltiplos modelos","Um erro de configuração do servidor MCP","Uma vulnerabilidade exclusiva de bancos de dados SQL"], correta:1 },
+  { id:"m5-02", modulo:5, nivel:"medio", pergunta:"Por que colocar regras de permissão detalhadas no system prompt não é suficiente como única defesa contra prompt injection?", opcoes:["Porque o system prompt tem limite rígido de caracteres","Porque o modelo ainda pode ser convencido a violar essas regras de forma não determinística, especialmente em modelos menores ou menos robustos","Porque regras de permissão só podem ser aplicadas via ferramentas MCP","Porque o LangChain ignora qualquer regra de segurança escrita no prompt","Porque isso é proibido pelos termos de uso da OpenAI"], correta:1 },
+  { id:"m5-03", modulo:5, nivel:"facil", pergunta:"Qual servidor MCP é usado no módulo 5 para tornar o risco de prompt injection concreto?", opcoes:["Um servidor MCP de banco de dados SQL","Um servidor MCP de filesystem (leitura de arquivos)","Um servidor MCP de envio de e-mails","Um servidor MCP de execução de comandos shell","Um servidor MCP de agenda/calendário"], correta:1 },
+  { id:"m5-04", modulo:5, nivel:"dificil", pergunta:"Por que o nó de guardrails nunca tem acesso às ferramentas MCP, mesmo sendo ele quem decide se a entrada é segura?", opcoes:["Por limitação técnica do LangGraph, que impede múltiplos nós de acessarem MCP","Assim, mesmo que alguém manipule o modelo de guardrails, o pior cenário é liberar a passagem para o agente principal seguir as regras normais — o guardrail nunca executa nada perigoso","Porque ferramentas MCP são incompatíveis com modelos pequenos","Porque isso aumentaria o custo de tokens de forma proibitiva","Não há motivo técnico, é só uma convenção de nomenclatura"], correta:1 },
+  { id:"m5-05", modulo:5, nivel:"medio", pergunta:"Que vantagem prática, além de segurança, um modelo \"safeguard\" dedicado costuma ter em relação a um modelo de propósito geral?", opcoes:["Suporte nativo a multimodalidade","Latência mais baixa, já que costuma ser um modelo menor, especializado numa tarefa mais restrita","Custo por token mais alto, mas maior precisão em qualquer tarefa","Capacidade de gerar imagens","Acesso automático a todas as ferramentas MCP"], correta:1 },
+  { id:"m5-06", modulo:5, nivel:"dificil", pergunta:"Por que usar PromptTemplate em vez de concatenação manual de strings é considerado mais seguro, ainda que não seja uma solução completa?", opcoes:["Porque PromptTemplate criptografa o prompt inteiro","O framework já cuida de sanitização básica por baixo dos panos, reduzindo (sem eliminar) a superfície de ataque","Porque PromptTemplate bloqueia qualquer tentativa de prompt injection automaticamente","Porque PromptTemplate é mais rápido de executar","Porque strings concatenadas manualmente não são aceitas pela API da OpenAI"], correta:1 },
+  { id:"m5-07", modulo:5, nivel:"medio", pergunta:"Qual é o princípio central reforçado como conclusão do módulo 5?", opcoes:["Sempre usar o modelo mais caro disponível para reduzir risco","Nunca confiar na entrada do usuário como segura por padrão, especialmente quando o agente tem acesso a ferramentas com efeito real","Guardrails são opcionais quando o system prompt é bem escrito","MCP deve ser evitado em qualquer aplicação de produção","Prompt injection só é um risco teórico, sem casos práticos"], correta:1 },
+
+  { id:"m6-01", modulo:6, nivel:"facil", pergunta:"Por que o módulo 6 usa Neo4j (banco de grafos) em vez de um banco relacional?", opcoes:["Porque bancos relacionais não suportam Cypher","Porque grafos tornam relações entre dados mais naturais de consultar e visualizar (ex: padrões de compra, progresso de alunos)","Porque Neo4j é gratuito e Postgres não","Porque o padrão texto-para-query só funciona com bancos de grafos","Por exigência do LangGraph"], correta:1 },
+  { id:"m6-02", modulo:6, nivel:"medio", pergunta:"Qual é o critério usado pelo query planner para decidir se uma pergunta precisa ser decomposta em sub-perguntas?", opcoes:["O tamanho em caracteres da pergunta","Se a pergunta pode ser respondida com uma única query (caso simples) ou exige cruzar múltiplos domínios de dados/cálculos (caso complexo)","O idioma em que a pergunta foi escrita","Sempre decompor, independente da pergunta","O histórico de perguntas anteriores do mesmo usuário"], correta:1 },
+  { id:"m6-03", modulo:6, nivel:"facil", pergunta:"Para que serve o prefixo EXPLAIN antes de uma query Cypher no validateQuery?", opcoes:["Para gerar um relatório em linguagem natural do resultado","Para validar a sintaxe da query sem executá-la de fato, sem tocar nos dados","Para forçar a query a rodar mais rápido","Para traduzir a query para SQL","Para registrar a query em um log de auditoria"], correta:1 },
+  { id:"m6-04", modulo:6, nivel:"dificil", pergunta:"Qual é a diferença de tratamento entre results === null e results.length === 0 no cypherExecutorNode?", opcoes:["São tratados exatamente da mesma forma, sempre como erro","results === null significa erro de execução (dispara correção); results.length === 0 significa query válida mas sem dados, tratado como caso de negócio","results === null significa sucesso; results.length === 0 significa falha","Ambos os casos encerram o grafo imediatamente sem gerar resposta","A diferença só importa para perguntas multi-step"], correta:1 },
+  { id:"m6-05", modulo:6, nivel:"medio", pergunta:"O que acontece quando uma query gerada falha na validação de sintaxe, segundo o mecanismo de auto-correção do módulo 6?", opcoes:["O sistema desiste imediatamente e retorna erro genérico ao cliente","A query com erro volta para um nó de LLM, junto com a mensagem de erro e o schema do banco, pedindo correção — até um número máximo de tentativas","O sistema reinicia o banco de dados Neo4j","A pergunta original é descartada e uma nova é solicitada ao usuário","O erro é ignorado e a query é executada mesmo assim"], correta:1 },
+  { id:"m6-06", modulo:6, nivel:"dificil", pergunta:"Por que existe um limite máximo de tentativas de correção (maxCorrectionAttempts), em vez de tentar indefinidamente?", opcoes:["Por limitação de armazenamento do Neo4j","Como proteção contra loop infinito, já que o fluxo é um grafo com ciclos (gerador → executor → correção → executor)","Porque o LangChain cobra por tentativa de correção","Porque queries Cypher só podem ser corrigidas uma vez, por design da linguagem","Não há limite de tentativas nesse módulo"], correta:1 },
+  { id:"m6-07", modulo:6, nivel:"medio", pergunta:"Por que o prompt de síntese final (multi-step) recebe cada sub-pergunta, sua query e seu resultado, em vez de só o resultado agregado final?", opcoes:["Por exigência de formato do Neo4j","Para permitir ao modelo gerar um relatório coerente combinando várias consultas, em vez de respostas fragmentadas","Porque o resultado agregado nunca está disponível a tempo","Para reduzir o número de tokens usados","Porque cada sub-pergunta precisa de um modelo de LLM diferente"], correta:1 },
+
+  { id:"m7-01", modulo:7, nivel:"facil", pergunta:"O que muda estruturalmente no código para dar suporte a documentos/imagens (multimodalidade), segundo o módulo 7?", opcoes:["É necessário reescrever todo o pipeline de prompts","Basta incluir um campo adicional na mensagem apontando para o arquivo (URL ou base64); o resto do fluxo permanece igual","É preciso trocar o framework LangChain por outro específico para multimodalidade","O schema de saída Zod deixa de ser necessário","É obrigatório usar um provedor de LLM diferente do OpenRouter"], correta:1 },
+  { id:"m7-02", modulo:7, nivel:"medio", pergunta:"Por que enviar o texto já extraído de um PDF pode ser preferível a enviar o arquivo bruto para o modelo?", opcoes:["Porque modelos de IA não conseguem processar PDFs de forma alguma","Porque o endpoint usado não suporta enviar o documento em pedaços — para arquivos grandes, o texto extraído evita payload e custo de tokens excessivos","Porque texto extraído é mais seguro contra prompt injection","Porque o campo image_url da API rejeita arquivos PDF","Não há vantagem real, é só uma preferência estética"], correta:1 },
+  { id:"m7-03", modulo:7, nivel:"facil", pergunta:"Qual ferramenta é destacada no módulo 7 para tracing especializado em aplicações de IA?", opcoes:["LangSmith Studio","LangFuse","Neo4j Bloom","OpenRouter Analytics","Fastify Insights"], correta:1 },
+  { id:"m7-04", modulo:7, nivel:"medio", pergunta:"Qual padrão de instrumentação é usado para integrar o LangFuse à aplicação, segundo o módulo 7?", opcoes:["Webhooks customizados","OpenTelemetry — um padrão de instrumentação já usado em observabilidade de software em geral, não exclusivo de IA","GraphQL subscriptions","SNMP","Um SDK proprietário do LangFuse sem padrão aberto"], correta:1 },
+  { id:"m7-05", modulo:7, nivel:"dificil", pergunta:"Por que testes automatizados tradicionais (comparação exata de string) não são suficientes para validar a qualidade de respostas geradas por LLM?", opcoes:["Porque LLMs nunca geram texto, só JSON","Porque respostas de LLM não são determinísticas — o mesmo prompt pode gerar textos diferentes, mas semanticamente equivalentes, em execuções diferentes","Porque testes automatizados são proibidos em aplicações de IA","Porque comparação de string é mais lenta que comparação numérica","Porque o Node.js não suporta comparação de strings longas"], correta:1 },
+  { id:"m7-06", modulo:7, nivel:"dificil", pergunta:"Qual é a diferença entre o modelo tradicional de \"requisição e resposta\" e um modelo de \"realtime\" para áudio, segundo o módulo 7?", opcoes:["Não há diferença técnica, apenas de nome comercial","Realtime usa uma conexão contínua (WebRTC/WebSocket/VoIP) onde o modelo escuta e responde em tempo real, sem o ciclo tradicional de requisição/resposta","Realtime só funciona com texto, nunca com áudio","O modelo tradicional é sempre mais rápido que o realtime","Realtime elimina a necessidade de transcrição em qualquer cenário"], correta:1 },
+];
+
+const LETTERS = ["a", "b", "c", "d", "e"];
+const NIVEL_LABEL = { facil: "fácil", medio: "médio", dificil: "difícil" };
+const STORAGE_KEY = "questionario-geral-progress-v1";
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { answers: {} };
+    const parsed = JSON.parse(raw);
+    return { answers: parsed.answers || {} };
+  } catch {
+    return { answers: {} };
+  }
+}
+function saveProgress() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+}
+
+let progress = loadProgress();
+let currentRound = [];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function pickRound(size) {
+  const unseen = QUESTIONS.filter((q) => !progress.answers[q.id]);
+  const wrongBefore = QUESTIONS.filter((q) => progress.answers[q.id] && !progress.answers[q.id].correct);
+  const rest = QUESTIONS.filter((q) => progress.answers[q.id] && progress.answers[q.id].correct);
+
+  const pool = [...shuffle(unseen), ...shuffle(wrongBefore), ...shuffle(rest)];
+  return pool.slice(0, size);
+}
+
+function updateStats() {
+  const total = QUESTIONS.length;
+  const respondidas = Object.keys(progress.answers).length;
+  const acertos = Object.values(progress.answers).filter((a) => a.correct).length;
+  const pendentes = total - respondidas;
+  document.getElementById("statTotal").textContent = total;
+  document.getElementById("statRespondidas").textContent = respondidas;
+  document.getElementById("statAcertos").textContent = acertos;
+  document.getElementById("statPendentes").textContent = pendentes;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function renderRound() {
+  const area = document.getElementById("quizArea");
+  area.innerHTML = "";
+
+  if (!currentRound.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state panel";
+    empty.textContent = "Clique em \"Nova rodada\" para começar.";
+    area.appendChild(empty);
+    return;
+  }
+
+  currentRound.forEach((q, qIdx) => {
+    const card = document.createElement("div");
+    card.className = "question-card";
+
+    const meta = document.createElement("div");
+    meta.className = "q-meta";
+    meta.innerHTML =
+      '<span class="badge ' + q.nivel + '">' + NIVEL_LABEL[q.nivel] + '</span>' +
+      '<span class="badge modulo">Módulo ' + String(q.modulo).padStart(2, "0") + '</span>';
+    card.appendChild(meta);
+
+    const qText = document.createElement("div");
+    qText.className = "q-text";
+    qText.textContent = (qIdx + 1) + ". " + q.pergunta;
+    card.appendChild(qText);
+
+    const optsWrap = document.createElement("div");
+    optsWrap.className = "options";
+
+    const feedback = document.createElement("div");
+    feedback.className = "feedback";
+
+    const previous = progress.answers[q.id];
+
+    q.opcoes.forEach((opt, oIdx) => {
+      const label = document.createElement("label");
+      label.className = "option";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = "q-" + q.id;
+      input.value = String(oIdx);
+      const letter = document.createElement("span");
+      letter.className = "letter";
+      letter.textContent = LETTERS[oIdx] + ")";
+      const txt = document.createElement("span");
+      txt.className = "txt";
+      txt.textContent = opt;
+      label.appendChild(input);
+      label.appendChild(letter);
+      label.appendChild(txt);
+      optsWrap.appendChild(label);
+
+      if (previous) {
+        input.disabled = true;
+        if (oIdx === q.correta) label.classList.add("is-correct");
+        if (oIdx === previous.selected && oIdx !== q.correta) label.classList.add("is-wrong");
+        if (oIdx === previous.selected) input.checked = true;
+      }
+
+      input.addEventListener("change", () => {
+        optsWrap.querySelectorAll(".option").forEach((el) => el.classList.remove("is-correct", "is-wrong"));
+        optsWrap.querySelectorAll("input").forEach((otherInput) => {
+          otherInput.disabled = true;
+          if (Number(otherInput.value) === q.correta) {
+            otherInput.closest(".option").classList.add("is-correct");
+          }
+        });
+        const correct = oIdx === q.correta;
+        if (!correct) label.classList.add("is-wrong");
+        feedback.textContent = correct ? "Certo!" : "Errado — a resposta certa é a " + LETTERS[q.correta] + ").";
+        feedback.className = "feedback " + (correct ? "ok" : "bad");
+
+        progress.answers[q.id] = { selected: oIdx, correct, ts: Date.now ? Date.now() : 0 };
+        saveProgress();
+        updateStats();
+      });
+    });
+
+    if (previous) {
+      const correct = previous.correct;
+      feedback.textContent = correct ? "Certo!" : "Errado — a resposta certa é a " + LETTERS[q.correta] + ").";
+      feedback.className = "feedback " + (correct ? "ok" : "bad");
+    }
+
+    card.appendChild(optsWrap);
+    card.appendChild(feedback);
+    area.appendChild(card);
+  });
+}
+
+document.getElementById("btnNovaRodada").addEventListener("click", () => {
+  currentRound = pickRound(10);
+  renderRound();
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+});
+
+document.getElementById("btnResetar").addEventListener("click", () => {
+  if (!confirm("Isso apaga todo o progresso salvo neste navegador. Continuar?")) return;
+  progress = { answers: {} };
+  saveProgress();
+  currentRound = [];
+  updateStats();
+  renderRound();
+});
+
+document.getElementById("btnExportar").addEventListener("click", () => {
+  const payload = JSON.stringify(progress, null, 2);
+  const blob = new Blob([payload], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "questionario-geral-progresso.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("btnImportar").addEventListener("click", () => {
+  document.getElementById("importInput").click();
+});
+document.getElementById("importInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(String(reader.result));
+      if (!parsed || typeof parsed.answers !== "object") throw new Error("formato inválido");
+      progress = { answers: parsed.answers };
+      saveProgress();
+      updateStats();
+      currentRound = [];
+      renderRound();
+      alert("Progresso importado com sucesso.");
+    } catch (err) {
+      alert("Não foi possível importar: arquivo JSON inválido.");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+});
+
+updateStats();
+renderRound();
+</script>
+</body>
+</html>

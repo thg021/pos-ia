@@ -1,0 +1,39 @@
+@baseUrl = http://localhost:3000
+
+### Chat - agendar consulta
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+  "question": "Meu nome é João da Silva, quero agendar uma consulta com o doutor Alison hoje às 14h"
+}
+
+### Chat - cancelar consulta
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+  "question": "Meu nome é João da Silva, quero cancelar minha consulta com o doutor Alison hoje às 14h"
+}
+
+### Chat - fora do escopo (deve cair em intent unknown)
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+  "question": "qual a previsão do tempo?"
+}
+
+### Chat - question vazia
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+  "question": ""
+}
+
+### Chat - question ausente
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{}

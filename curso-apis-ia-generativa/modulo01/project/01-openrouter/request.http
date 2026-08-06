@@ -1,0 +1,31 @@
+@baseUrl = http://localhost:3000
+
+### Chat - pergunta simples
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+  "question": "hello world"
+}
+
+### Chat - pergunta sobre um conceito técnico
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+  "question": "o que é rate limiting?"
+}
+
+### Chat - deve falhar na validação de schema (question vazia)
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+  "question": ""
+}
+
+### Chat - deve falhar na validação de schema (question ausente)
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{}

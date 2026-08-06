@@ -1,0 +1,2387 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Módulo 2 — Grafo LangGraph, aula a aula</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Charter', 'Georgia', '"Iowan Old Style"', '"Times New Roman"', 'serif'],
+          sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+          mono: ['ui-monospace', '"SF Mono"', '"Cascadia Code"', '"Roboto Mono"', 'Consolas', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+:root {
+  --bg: #eef1ef;
+  --bg-elevated: #e2e8e2;
+  --ink: #171b18;
+  --ink-soft: #4a534c;
+  --ink-faint: #6f786f;
+  --line: #c7d0c7;
+  --accent-route: #b8862e;
+  --accent-route-soft: #b8862e33;
+  --accent-tutorial: #2f8f82;
+  --accent-tutorial-soft: #2f8f8222;
+  --accent-artigo: #7c6bb0;
+  --accent-artigo-soft: #7c6bb022;
+  --code-bg: #1b1f1c;
+  --code-fg: #e7ebe8;
+  --code-line: #333a34;
+  --font-display: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151a;
+    --bg-elevated: #191d22;
+    --ink: #e7ebe8;
+    --ink-soft: #aab3ac;
+    --ink-faint: #7c877e;
+    --line: #2b3230;
+    --accent-route: #e0ac4a;
+    --accent-route-soft: #e0ac4a2b;
+    --accent-tutorial: #4fb3a9;
+    --accent-tutorial-soft: #4fb3a92b;
+    --accent-artigo: #9a8cd6;
+    --accent-artigo-soft: #9a8cd62b;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151a;
+  --bg-elevated: #191d22;
+  --ink: #e7ebe8;
+  --ink-soft: #aab3ac;
+  --ink-faint: #7c877e;
+  --line: #2b3230;
+  --accent-route: #e0ac4a;
+  --accent-route-soft: #e0ac4a2b;
+  --accent-tutorial: #4fb3a9;
+  --accent-tutorial-soft: #4fb3a92b;
+  --accent-artigo: #9a8cd6;
+  --accent-artigo-soft: #9a8cd62b;
+}
+:root[data-theme="light"] {
+  --bg: #eef1ef;
+  --bg-elevated: #e2e8e2;
+  --ink: #171b18;
+  --ink-soft: #4a534c;
+  --ink-faint: #6f786f;
+  --line: #c7d0c7;
+  --accent-route: #b8862e;
+  --accent-route-soft: #b8862e33;
+  --accent-tutorial: #2f8f82;
+  --accent-tutorial-soft: #2f8f8222;
+  --accent-artigo: #7c6bb0;
+  --accent-artigo-soft: #7c6bb022;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--accent-route-soft); }
+
+a, button { font-family: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent-route); outline-offset: 2px; }
+
+/* ---------- Scrollbar: thin pill in the route-line accent color ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-route) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--accent-route) 50%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-route);
+}
+*::-webkit-scrollbar-corner { background: transparent; }
+
+.content h1, .content h2, .content h3, .content h4 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+  margin: 1.6em 0 0.5em;
+}
+.content h1 { display: none; } /* título já mostrado no cabeçalho */
+.content h2 { font-size: 1.35rem; border-top: 1px solid var(--line); padding-top: 0.9em; }
+.content h3 { font-size: 1.1rem; color: var(--ink); }
+.content h4 { font-size: 1rem; color: var(--ink-soft); }
+.content p { margin: 0 0 1.1em; color: var(--ink); }
+.content strong { color: var(--ink); }
+.content em { color: var(--ink-soft); }
+.content code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--bg-elevated);
+  padding: 0.12em 0.4em;
+  border-radius: 5px;
+}
+.content ul, .content ol { padding-left: 1.3em; margin: 0 0 1.2em; }
+.content li { margin: 0.35em 0; }
+.content li > ul, .content li > ol { margin-top: 0.35em; }
+.content blockquote {
+  border-left: 3px solid var(--accent-route);
+  margin: 0 0 1.2em;
+  padding: 0.2em 0 0.2em 1em;
+  color: var(--ink-soft);
+}
+.content blockquote p { margin-bottom: 0.6em; }
+.content hr { border: none; border-top: 1px solid var(--line); margin: 2em 0; }
+
+.code-card {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 10px;
+  margin: 0 0 1.4em;
+  overflow: hidden;
+}
+.code-lang {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #93a099;
+  padding: 8px 14px 0;
+}
+.code-card pre {
+  margin: 0;
+  padding: 10px 14px 16px;
+  overflow-x: auto;
+}
+.code-card code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  background: none;
+  padding: 0;
+  color: inherit;
+  white-space: pre;
+}
+
+.table-wrap { overflow-x: auto; margin: 0 0 1.4em; }
+.content table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+.content th, .content td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.content th {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  background: var(--bg-elevated);
+}
+
+.inline-link {
+  color: var(--accent-tutorial);
+  border-bottom: 1px solid var(--accent-tutorial-soft);
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding: 0;
+  font: inherit;
+}
+.inline-link:hover { border-bottom-color: var(--accent-tutorial); }
+</style>
+</head>
+<body class="font-sans">
+<div class="flex flex-col md:flex-row w-full min-h-screen" style="background:var(--bg);color:var(--ink)">
+  <aside class="w-full md:w-[300px] md:shrink-0 border-b md:border-b-0 md:border-r border-[var(--line)] px-5 py-7 md:sticky md:top-0 md:h-screen overflow-y-auto flex flex-col gap-6">
+    <a href="../index.html" class="inline-flex items-center gap-1 text-[0.78rem] font-medium" style="color:var(--ink-faint)">&larr; Início</a>
+    <div>
+      <div class="font-mono text-[0.68rem] tracking-[0.12em] uppercase" style="color:var(--accent-route)">Módulo 2 · APIs de IA Generativa</div>
+      <h1 class="font-display text-[1.35rem] leading-tight mt-1 text-balance">Grafo LangGraph: roteamento condicional</h1>
+      <p class="text-[0.85rem] mt-1.5" style="color:var(--ink-soft)">Seis paradas, do esqueleto do projeto ao fallback. Clique numa estação para ler.</p>
+    </div>
+    <nav class="relative flex flex-col" id="route"></nav>
+    <div class="mt-auto pt-4 border-t text-[0.78rem]" style="border-color:var(--line);color:var(--ink-faint)">
+      Progresso salvo neste navegador. Código-fonte das aulas em
+      <code class="font-mono text-[0.92em] px-1 py-0.5 rounded" style="background:var(--bg-elevated)">docs/curso-apis-ia-generativa/modulo02/</code>.
+    </div>
+  </aside>
+  <main class="flex-1 min-w-0 w-full px-6 md:px-10 lg:px-16 py-12 pb-24">
+    <div class="flex flex-wrap items-baseline gap-3 mb-1">
+      <span class="font-mono text-[0.72rem] tracking-[0.1em] uppercase" style="color:var(--accent-route)" id="lessonEyebrow"></span>
+    </div>
+    <h2 class="font-display text-[clamp(1.6rem,3vw,2.15rem)] leading-tight mt-1.5 mb-4 text-balance" id="lessonTitle"></h2>
+    <div id="typeToggleWrap"></div>
+    <span id="docTag"></span>
+    <article class="content w-full" id="content"></article>
+    <div class="mt-10 pt-5 border-t flex justify-between items-center gap-4 flex-wrap" style="border-color:var(--line)">
+      <label class="flex items-center gap-2 text-[0.88rem]" style="color:var(--ink-soft)">
+        <input type="checkbox" id="markDone" class="w-4 h-4" style="accent-color:var(--accent-route)" />
+        <span id="markDoneLabel">Marcar como concluído</span>
+      </label>
+      <div class="flex gap-2.5">
+        <button id="prevBtn" type="button" class="text-[0.82rem] px-3.5 py-2 border border-[var(--line)] text-[var(--ink-soft)] rounded-lg transition-colors hover:border-[var(--accent-route)] hover:text-[var(--ink)] disabled:opacity-35 disabled:pointer-events-none">&larr; Anterior</button>
+        <button id="nextBtn" type="button" class="text-[0.82rem] px-3.5 py-2 border border-[var(--line)] text-[var(--ink-soft)] rounded-lg transition-colors hover:border-[var(--accent-route)] hover:text-[var(--ink)] disabled:opacity-35 disabled:pointer-events-none">Próxima &rarr;</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="text/plain" id="doc-01-artigo">
+# O que é LangChain (e por que ele se chama assim)?
+
+## Para quem está chegando agora
+
+Imagina que você quer construir um assistente de IA. Esse assistente precisa fazer várias coisinhas em sequência: receber a pergunta do usuário, buscar informação relevante, mandar tudo isso para um modelo de linguagem (tipo o GPT), pegar a resposta, formatar e devolver para o usuário.
+
+Você **poderia** escrever tudo isso na mão, um passo depois do outro, com vários `if`s pra tratar casos diferentes. Funciona, mas vira uma bagunça rápido — cada vez que você quiser mudar a ordem dos passos ou adicionar um novo, vai ter que reescrever um bloco de código emaranhado. O **LangChain** existe pra te dar peças prontas pra montar esse tipo de fluxo — e ele tem uma versão para Python e uma para TypeScript/JavaScript (que é a que o curso vai usar daqui pra frente).
+
+**Por que "Chain" (corrente/cadeia)?** Porque a ideia central é *encadear* funções: o resultado de uma etapa vira a entrada da próxima, como elos de uma corrente. Cada elo faz uma coisa pequena e bem definida.
+
+## Duas ferramentas, dois papéis diferentes
+
+Esse é o ponto que mais confunde quem está começando, então vale grifar:
+
+| Ferramenta          | Pra que serve                                                                                                                                                                                                                |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **LangChain** | A biblioteca/framework em si — o código que você importa no seu projeto pra montar os fluxos de IA.                                                                                                                       |
+| **LangGraph** | Uma extensão do LangChain pra montar esses fluxos como um **grafo** (uma espécie de fluxograma), inclusive com desvios condicionais e memória. É o que o pessoal mais usa no dia a dia pra criar agentes.         |
+| **LangSmith** | Um painel**na nuvem**, gratuito para o uso do curso, que mostra o que aconteceu por trás dos panos: quais funções foram chamadas, em que ordem, quanto tempo levou. Serve como "raio-x" (debug) da sua aplicação. |
+
+Uma analogia: se o **LangChain** é a caixa de ferramentas e o **LangGraph** é o projeto arquitetônico de como as peças se conectam, o **LangSmith** é a câmera de segurança que grava tudo que rolou dentro da obra, pra você conseguir investigar se algo deu errado.
+
+E o melhor: nada disso te obriga a pagar. LangChain e LangGraph são open source (código aberto, de graça). O LangSmith tem um plano pago pra quem quer rodar em escala, mas pra estudar e até rodar aplicações reais em produção, o uso gratuito já é suficiente.
+
+## "Mas isso não é igual ferramenta de low-code?"
+
+Quando você abre o **LangGraph Studio** (a interface visual que mostra o fluxo rodando), a primeira impressão é mesmo parecida com ferramentas *low-code* (tipo n8n, Zapier): você vê caixinhas conectadas por setas, representando o caminho que a informação percorreu.
+
+A diferença importante: cada uma dessas caixinhas (chamadas de **nós**, ou *nodes*) **é código de verdade**, escrito por você. O desenho é só uma forma de visualizar o que o seu código está fazendo — não é o low-code te escondendo a lógica, é você vendo a sua própria lógica de um jeito mais fácil de acompanhar.
+
+## Por que essa aula não usa IA de verdade ainda
+
+Se você acompanhar essa aula esperando ver um modelo de linguagem respondendo perguntas inteligentes, vai se decepcionar — e é de propósito. O objetivo aqui é só entender o **esqueleto**: como o projeto é montado, como o LangGraph Studio funciona, como a gente depura. Quando você manda "hello world" pro chatbot de exemplo gerado automaticamente, ele literalmente **repete o que você escreveu** — não tem nenhuma IA plugada ainda.
+
+A lógica é: dominando esse esqueleto agora, nas próximas aulas fica bem mais fácil encaixar IA de verdade nesses mesmos fluxos, porque o "como o projeto se organiza" você já vai saber de cor.
+
+## Um detalhe chato (mas importante): versões
+
+Quando você manda o LangGraph gerar um projeto de exemplo pronto (via `create-langgraph` — mais sobre isso no tutorial), esse projeto vem configurado com uma versão **beta** mais antiga do LangChain (a `0.3.x`). Só que pra usar em produção de verdade, o ideal é a versão `1.x`, que é a estável.
+
+Isso é comum em bibliotecas de IA: a área muda muito rápido, e os templates prontos às vezes ficam desatualizados. Por isso a aula ensina a **aproveitar só a parte útil do gerador automático** (o arquivo `langgraph.json`, que indica onde está o "mapa" do seu grafo) e montar o resto do projeto do zero, já na versão mais nova.
+
+## Resumindo em uma frase
+
+LangChain te dá as peças pra encadear etapas de um fluxo de IA; LangGraph te ajuda a organizar essas peças como um grafo com desvios e memória; e LangSmith te deixa espiar, de graça, o que aconteceu por trás de cada execução. Nenhum dos três, sozinho, "é" a IA — eles são a estrutura em volta dela.
+
+Para o passo a passo prático de configuração (criar chave de API, iniciar o projeto, rodar o LangGraph Studio localmente), veja o [tutorial complementar](01-tutorial-configurando-langchain-langgraph.md).
+</script>
+
+<script type="text/plain" id="doc-01-tutorial">
+# Tutorial: configurando o primeiro projeto LangChain + LangGraph
+
+> Antes de seguir esse tutorial, vale a pena ler o [artigo introdutório](01-artigo-introducao-langchain-langgraph.md) pra entender o que é cada peça (LangChain, LangGraph, LangSmith).
+>
+> Requisito do repositório: **Node.js 22+** (a aula usa Node 24 — confira sua versão com `node -v` antes de começar).
+
+## O que você vai ter no final
+
+Um projeto Node.js rodando localmente, conectado ao LangGraph Studio (a interface visual que mostra o "fluxograma" da sua aplicação), com monitoramento gratuito no LangSmith. Ainda **sem IA de verdade** — essa parte fica pras próximas aulas. Aqui o foco é a fundação.
+
+## Passo 1 — Criar uma conta e uma API Key no LangSmith
+
+1. Acesse o site do LangSmith e crie uma conta (ou faça login).
+2. No menu, procure **Settings** (Configurações).
+3. Clique em **API Key** → dê um nome pra ela (pode ser algo como `pos-graduacao`, só pra você identificar depois).
+4. Não precisa selecionar um workspace específico nem preencher descrição — pode deixar em branco.
+5. Clique em **Create**.
+6. **Copie a chave gerada na hora** e guarde num lugar seguro (um gerenciador de senhas, por exemplo). Você não vai conseguir ver essa chave de novo depois de fechar a tela.
+
+> **Dica de segurança (vale pra qualquer API key, não só essa):** no dia a dia profissional, o ideal é que chaves de API sejam **rotacionadas** periodicamente — por exemplo, gerar uma nova a cada 30 ou 90 dias, com alguma automação que atualiza o ambiente de produção sozinha. Assim, se uma chave antiga vazar, ela já não serve mais pra ninguém usar seus créditos sem permissão.
+
+## Passo 2 — Preparar a pasta do projeto
+
+Dentro da pasta do módulo 2 do curso, crie uma nova pasta pro projeto (seguindo a numeração usada no repositório, algo como `02-langchain`).
+
+Copie dois arquivos que você já usou no módulo anterior:
+
+- O `tsconfig.json` (configuração do TypeScript, só para o editor entender os tipos).
+- O `.env.example` (modelo de variáveis de ambiente — sem valores reais, só os nomes).
+
+Confira a versão do Node instalada:
+
+```bash
+node -v
+```
+
+Se não for a mesma versão usada no curso (Node 24, ou pelo menos 22+ como exige este repositório), instale/troque antes de continuar.
+
+## Passo 3 — Configurar as variáveis de ambiente
+
+Duplique o `.env.example` e renomeie a cópia para `.env` (esse arquivo **não é versionado no Git** — ele fica só na sua máquina, porque guarda segredos).
+
+Você vai precisar de três variáveis relacionadas ao LangSmith. Os nomes exatos aparecem na documentação oficial do LangSmith, na seção "Open Source" → "LangSmith" (o nome pode variar ligeiramente de versão para versão da doc, então sempre confira lá):
+
+```bash
+# .env
+LANGSMITH_API_KEY=cole_aqui_a_chave_que_voce_copiou_no_passo_1
+LANGSMITH_TRACING=true
+LANGSMITH_PROJECT=02-langchain
+```
+
+Linha a linha:
+
+- `LANGSMITH_API_KEY`: a chave que você gerou no Passo 1. É o que autentica seu projeto local com a conta do LangSmith.
+- `LANGSMITH_TRACING=true`: liga o **tracing** (rastreamento) — é essa variável que faz o LangChain mandar, automaticamente, cada execução do grafo pro painel do LangSmith. Se ela estiver ausente ou `false`, o código roda igual, mas você não vê nada no painel.
+- `LANGSMITH_PROJECT`: o nome do projeto como ele vai aparecer lá no painel — pode usar o mesmo nome da pasta, pra não se perder depois quando tiver vários projetos do curso rodando.
+
+Nessa aula específica você **não precisa** de uma chave da OpenAI (tipo `OPENAI_API_KEY`), porque ainda não estamos chamando nenhum modelo de IA. Mesmo assim, é comum deixar a variável no `.env.example` como referência para quem for reaproveitar o projeto depois.
+
+## Passo 4 — Iniciar o projeto Node.js
+
+Dentro da pasta `02-langchain`:
+
+```bash
+npm init -y
+```
+
+Instale o Fastify (o mesmo framework de API usado no módulo anterior) e as bibliotecas do LangChain, **nas versões exatas usadas no curso** — isso importa porque a área de IA muda muito rápido e versões diferentes podem ter comportamento diferente:
+
+```bash
+npm install fastify
+npm install langchain@0.1.19
+npm install @langchain/langgraph@0.2.17
+```
+
+- `fastify`: o servidor HTTP — o mesmo papel que já teve no módulo 1.
+- `langchain@0.1.19`: o pacote "guarda-chuva" do LangChain, com os tipos de mensagem (`HumanMessage`, `AIMessage`, `SystemMessage`) e outras utilidades.
+- `@langchain/langgraph@0.2.17`: o pacote específico do LangGraph — é dele que vêm `StateGraph`, `START`, `END`, que você vai usar para montar o grafo no próximo tutorial.
+
+> Se algum desses pacotes já tiver uma versão mais nova quando você for fazer o curso, tudo bem seguir a versão mais recente — só tenha em mente que o comportamento pode divergir um pouco do que aparece na aula gravada.
+
+## Passo 5 — Gerar um projeto de exemplo (só para referência)
+
+O pacote de linha de comando do LangGraph consegue gerar um projeto de exemplo pronto, com boilerplate (código inicial padrão). Vale a pena rodar isso **fora** da pasta principal, só pra explorar:
+
+```bash
+npx create-langgraph
+```
+
+Durante o assistente interativo:
+
+- Dê um nome ao projeto de exemplo (ex.: `my-app`).
+- Escolha o tipo de projeto — opções comuns incluem um chatbot simples, um agente com padrão *ReAct*, ou exemplos com memória. Para só explorar a estrutura, escolha a opção mais simples (**new graph project**).
+- Aceite inicializar com Git se for perguntado.
+
+Entre na pasta gerada e instale as dependências:
+
+```bash
+cd my-app
+npm install
+```
+
+Se o comando seguinte pedido pelo assistente (algo como `npx @langchain/langgraph-cli dev`) reclamar que não encontrou um arquivo `.env`, crie um vazio e rode de novo:
+
+```bash
+touch .env
+npx @langchain/langgraph-cli dev
+```
+
+Isso deve abrir automaticamente uma aba no navegador com o **LangGraph Studio** rodando localmente.
+
+## Passo 6 — Explorar o LangGraph Studio
+
+Na interface que abriu:
+
+1. Você vai ver um **grafo** (um desenho com caixinhas conectadas por setas) — é o fluxo da aplicação de exemplo.
+2. Tem um campo de **chat** ao lado. Digite qualquer coisa, tipo `hello world`.
+3. Repare que a resposta é bem rápida e, no fundo, é só um eco — o projeto de exemplo não usa nenhuma IA de verdade, só demonstra o mecanismo de ida e volta.
+4. Isso já mostra a grande vantagem do Studio: você **não precisa construir um frontend completo** só pra testar seu fluxo de IA enquanto desenvolve. O Studio serve como uma interface de teste pronta.
+
+## Passo 7 — Aproveitar só o essencial do projeto gerado
+
+O projeto de exemplo gerado pelo `create-langgraph` costuma vir com algumas escolhas que talvez você não queira copiar direto:
+
+- Usa o Jest como executor de testes, mesmo sem ter testes de verdade escritos (o Node já tem um executor de testes nativo, que é o padrão usado neste repositório).
+- Vem fixado numa versão **beta** mais antiga do LangChain (a série `0.3.x`), enquanto o ideal para produção é a versão estável mais recente (`1.x`).
+
+Por isso, a recomendação é: **não copie o projeto de exemplo inteiro**. Copie apenas o arquivo `langgraph.json` para a raiz do seu projeto real (`02-langchain`).
+
+Exemplo de como esse arquivo costuma se parecer:
+
+```json
+{
+  "graphs": {
+    "agent": "./src/graph/graph.ts:graph"
+  },
+  "env": ".env"
+}
+```
+
+Linha a linha:
+
+- `"graphs"`: um objeto onde cada chave é um **nome de grafo** (aqui, `"agent"` — é só um rótulo, pode ser qualquer string) e o valor diz **onde encontrar a função exportada que representa esse grafo**.
+- `"./src/graph/graph.ts:graph"`: o formato é `caminho/do/arquivo.ts:nomeDaExportação`. Ou seja, o LangGraph vai abrir `src/graph/graph.ts` e procurar por um `export` chamado `graph`. Sem esse arquivo apontando pro lugar certo (e sem essa exportação existindo), o LangGraph Studio não consegue achar o seu código e vai dar erro.
+- `"env": ".env"`: diz ao LangGraph Studio para carregar as variáveis de ambiente desse arquivo antes de rodar — é assim que `LANGSMITH_API_KEY` e companhia chegam até o processo.
+
+(O caminho exato depende de como você organizar as pastas do seu projeto — o importante é que ele aponte pra onde a função exportada realmente está. No [próximo tutorial](02-tutorial-grafo-langgraph-api.md), essa função `graph` é criada dentro de um arquivo `factory.ts`.)
+
+Depois de copiar o `langgraph.json`, você pode apagar a pasta de exemplo (`my-app`) — ela já cumpriu o papel de te mostrar a estrutura e te dar esse arquivo de configuração.
+
+## Onde isso te deixa
+
+Com o `.env` configurado, as dependências instaladas e o `langgraph.json` apontando pro lugar certo, você tem a fundação pronta para, na próxima aula, começar a escrever de fato os nós do grafo (as funções que vão conversar com um modelo de IA, aplicar condicionais no fluxo e assim por diante).
+
+## Verifique seu entendimento
+
+1. Qual é a diferença entre `LANGSMITH_TRACING` e `LANGSMITH_PROJECT` — o que cada uma controla?
+2. Por que a aula recomenda copiar só o `langgraph.json` do projeto gerado por `create-langgraph`, em vez do projeto inteiro?
+3. No `langgraph.json`, o que significa o valor `"./src/graph/graph.ts:graph"`?
+4. Por que essa aula não precisa de uma `OPENAI_API_KEY` no `.env`?
+</script>
+
+<script type="text/plain" id="doc-02-artigo">
+# O estado do grafo: a ficha que passa de nó em nó
+
+> Aula "Gerenciando estados em fluxos, usando LangGraph Studio, expondo o projeto como Web API".
+> Continuação de [O que é LangChain (e por que ele se chama assim)?](01-artigo-introducao-langchain-langgraph.md)
+
+## Recapitulando rapidinho
+
+Na aula anterior a gente descobriu que:
+
+- **LangChain** dá as peças para encadear etapas de um fluxo de IA.
+- **LangGraph** organiza essas peças como um **grafo** (um desenho com caixinhas conectadas por setas).
+- **LangSmith** deixa a gente espiar o que aconteceu por trás de cada execução.
+
+Só que ficou faltando responder a pergunta mais importante: **o que tem dentro dessas caixinhas, e como elas conversam entre si?** É exatamente isso que essa aula começa a explicar.
+
+## Aproveitando o projeto anterior
+
+Antes de mexer no grafo, a aula reorganiza o projeto para ficar mais enxuto: da API do módulo anterior, só o arquivo de entrada (`index`) e o de inicialização do servidor (`server`) são reaproveitados — qualquer service específico de outra integração (como o da OpenAI) é removido, junto com testes que não fazem mais sentido nesse novo projeto. Fica só **um teste simples**, que só confere se a API responde com status `200` — o suficiente para garantir que a estrutura básica funciona antes de começar a alterar a lógica.
+
+Esse é um hábito que vale registrar: ao começar um projeto novo a partir de um anterior, é melhor **cortar o que não se aplica mais** do que carregar código morto — cada arquivo removido é uma fonte a menos de confusão futura.
+
+## O "estado" é a memória compartilhada do grafo
+
+Pensa no estado (*state*) como uma **ficha de anotações** que passa de mão em mão entre as etapas do seu fluxo. Cada etapa pode ler o que já está escrito ali, fazer o seu trabalho, e devolver a ficha atualizada para a próxima etapa.
+
+Na aula, essa "ficha" guarda três coisas:
+
+| Campo | Para que serve |
+| ----- | --------------- |
+| `messages` | O histórico de mensagens trocadas (obrigatório — é o que faz a aba de chat do LangGraph Studio funcionar). |
+| `output` | O texto final que vai ser devolvido para quem está usando a aplicação. |
+| `command` | Uma "opção" escolhida, por exemplo `upper` (deixar maiúsculo) ou `lower` (deixar minúsculo) — usada mais pra frente para decidir qual caminho o fluxo deve seguir. |
+
+Esse "formato" da ficha é descrito com o **Zod**, uma biblioteca de validação que você já deve ter usado em outros contextos (tipo validar o corpo de uma requisição HTTP). O LangChain já usa o Zod por baixo dos panos, então dá pra reaproveitar o que você já sabe.
+
+> **Detalhe técnico que vale registrar:** no momento dessa aula, o LangChain estava na versão `1.x` (a versão estável mais nova), mas havia um bug conhecido que impedia a aba de chat do Studio de funcionar direito com a forma "oficial" mostrada na documentação. O instrutor usou uma solução alternativa encontrada em uma *issue* do GitHub do projeto: descrever o estado usando **Zod na versão 3** (`zod@3`), em vez da versão mais recente do Zod. Isso é um lembrete de que, em bibliotecas de IA que mudam rápido, às vezes a documentação oficial fica um passo atrás — e vale a pena checar issues abertas quando algo não funciona como esperado.
+
+## Nós (*nodes*): cada opção que o fluxo pode executar
+
+Um **nó** é simplesmente uma função. Ela recebe o estado atual (a "ficha"), pode fazer o que for preciso — chamar uma API, rodar uma lógica, chamar um modelo de IA — e **sempre devolve o estado** (atualizado ou não) para o próximo passo.
+
+A analogia que a aula usa: pensa nos nós como as **opções de um menu**. Alguns exemplos possíveis de nó: "pesquisar na internet", "transformar em CSV", "transformar em SQL", "transformar em script". Cada uma dessas opções vira uma função separada. Quantos nós você quiser — o grafo pode ter vários.
+
+Nessa aula, o primeiro nó criado se chama `identifyIntent` (algo como "identificar a intenção" do que o usuário pediu). Nessa primeira versão, ele ainda não faz nenhum processamento de verdade — só recebe o estado e devolve ele para frente, sem alterar nada. É um placeholder: serve para testar se a "fiação" do grafo está correta antes de colocar lógica de verdade dentro (isso só acontece na próxima aula).
+
+## Arestas (*edges*): a ordem de execução
+
+Se os nós são "o que" pode ser feito, as **arestas** definem "em que ordem" as coisas acontecem. É literalmente como um cadeado de funções: "depois dessa função, chama essa outra", e assim por diante — voltando à ideia de "corrente" que dá nome ao LangChain.
+
+Todo grafo tem dois pontos especiais: **`START`** (o ponto de entrada) e **`END`** (o ponto de saída). Na versão mais simples criada nessa aula, o fluxo é:
+
+```
+START → identifyIntent → END
+```
+
+Ou seja: começa, roda o nó `identifyIntent`, termina. Só isso — mas já é o suficiente para aparecer desenhado no LangGraph Studio e confirmar que a estrutura básica está funcionando.
+
+## Por que fazer um exemplo de "deixar maiúsculo/minúsculo"?
+
+Pode parecer bobo treinar um fluxo de IA com uma tarefa tão simples, mas é proposital: como ainda não tem nenhum modelo de IA plugado, o objetivo é só **enxergar os nós sendo ativados e executados**, sem a complexidade extra de lidar com respostas de um LLM. A ideia é que, dependendo de um "comando" enviado (`upper` ou `lower`), o fluxo tome caminhos diferentes mais pra frente — isso é o começo de um **fluxo condicional**, aprofundado nas próximas duas aulas.
+
+## Expondo o grafo como uma Web API
+
+Depois de montar o grafo, ele precisa ser "plugado" na API que já existia (construída com Fastify no módulo anterior). A receita é direta:
+
+1. Importa a função que constrói o grafo (`buildGraph`).
+2. Cria uma instância do grafo uma vez: `const graph = buildGraph();`
+3. Dentro da rota HTTP, chama `await graph.invoke({ ...estado inicial... })`.
+4. Devolve para quem chamou a API o campo `output` do resultado — que é exatamente o campo que a gente definiu lá no estado.
+
+Um detalhe importante: a mensagem do usuário não é passada como uma string qualquer — ela é embrulhada numa `HumanMessage` (mensagem humana), porque o LangChain trabalha com o conceito de que mensagens podem vir de fontes diferentes: do usuário (`HumanMessage`), da própria IA (`AIMessage`) ou do sistema (`SystemMessage`). Isso importa porque, mais pra frente, o modelo de IA vai usar esse "papel" (quem disse o quê) para entender o contexto da conversa.
+
+## Ligando ao LangGraph Studio
+
+Para o LangGraph Studio conseguir "achar" o grafo (e não só a API rodar por baixo dos panos), é preciso exportar uma instância pronta — geralmente numa função `factory.ts`, que importa `buildGraph` e exporta uma constante `graph` já chamando essa função. É esse nome (`graph`) que precisa bater com o caminho configurado no `langgraph.json` (visto no [tutorial de configuração](01-tutorial-configurando-langchain-langgraph.md)).
+
+Depois de conectar tudo, o Studio já mostra o nó `identifyIntent` no desenho do grafo, e o campo `output` do estado aparece atualizado — mesmo sem nenhuma transformação de verdade ainda acontecendo, é a confirmação de que o "fio" entre o código e a interface visual está funcionando.
+
+## Fechando o raciocínio
+
+Essa aula fecha o ciclo mínimo: **definir o formato do estado → criar um primeiro nó → ligar `START`/`END` → expor pela API → visualizar no Studio**. É esse ciclo que se repete (com mais nós e mais lógica) em qualquer grafo do LangGraph, não importa o tamanho. A partir da próxima aula, o `identifyIntent` deixa de ser um placeholder e ganha lógica de verdade.
+
+Para o passo a passo com o código completo explicado linha a linha, veja o [tutorial complementar](02-tutorial-estado-e-primeiro-node.md).
+</script>
+
+<script type="text/plain" id="doc-02-tutorial">
+# Tutorial: definindo o estado do grafo e o primeiro node
+
+> Continuação prática de [O estado do grafo: a ficha que passa de nó em nó](02-artigo-estado-e-primeiro-node.md).
+> Antes desse tutorial, veja o [tutorial de configuração inicial](01-tutorial-configurando-langchain-langgraph.md) (criar chave do LangSmith, iniciar o projeto, etc.).
+>
+> Este tutorial explica **cada trecho de código linha a linha** — a ideia não é só copiar e colar, mas entender o porquê de cada decisão antes de seguir para a próxima aula.
+
+## O que você vai construir
+
+O esqueleto mínimo de um grafo do LangGraph: o formato do estado (usando Zod), um primeiro nó que ainda não faz nada de útil, e essa estrutura exposta como uma rota HTTP com Fastify. Ainda sem transformação de texto de verdade — isso vem na [próxima aula](03-tutorial-nodes-e-edges-lineares.md).
+
+## Passo 0 — Limpar o projeto herdado do módulo anterior
+
+Se você já fez o [tutorial de configuração inicial](01-tutorial-configurando-langchain-langgraph.md), seu projeto `02-langchain` já tem `.env`, `tsconfig.json`, `langgraph.json` e as dependências instaladas.
+
+Do projeto do módulo 1 (a API com Fastify), reaproveite apenas:
+
+- o arquivo de entrada (`src/index.ts`);
+- o arquivo de inicialização do servidor (`src/server.ts`);
+- o script `dev` do `package.json`.
+
+Remova qualquer service específico de outra integração (ex.: um `openrouter-service.ts`) e deixe só **um teste simples**, garantindo que a estrutura básica ainda funciona:
+
+```ts
+// tests/server.test.ts
+import { test } from "node:test";
+import assert from "node:assert";
+import { createServer } from "../src/server.ts";
+
+test("a API sobe e responde", async () => {
+  const app = createServer();
+
+  const response = await app.inject({
+    method: "POST",
+    url: "/chat",
+    body: { question: "teste" },
+  });
+
+  assert.strictEqual(response.statusCode, 200);
+});
+```
+
+Linha a linha:
+
+- `import { test } from "node:test"` e `import assert from "node:assert"`: os dois módulos nativos do Node que dão o test runner e as asserções — nenhuma dependência externa é instalada só para testar.
+- `createServer()`: a fábrica do servidor Fastify, reaproveitada do módulo anterior.
+- `app.inject({...})`: simula uma requisição HTTP real sem abrir uma porta de rede de verdade — mais rápido para rodar em testes automatizados.
+- `assert.strictEqual(response.statusCode, 200)`: por enquanto o único critério de sucesso é "a rota responde sem quebrar" — ainda não valida o conteúdo, porque a rota nem está processando nada de verdade ainda.
+
+> **Dica prática (TypeScript + ESM):** se ao rodar os testes você receber um erro relacionado a `import`, confira se o `package.json` tem `"type": "module"`. Mesmo usando TypeScript, o Node precisa saber que o projeto trabalha com módulos ES.
+
+Rode os testes a partir da raiz do projeto (`02-langchain`, não de dentro de nenhuma subpasta):
+
+```bash
+npm run test:dev
+```
+
+Se o VS Code tiver um terminal de debug JavaScript configurado (menu **Run and Debug** → **JavaScript Debug Terminal**), rodar o comando ali já deixa o depurador conectado automaticamente — útil para investigar falhas nos próximos passos, em vez de espalhar `console.log` pelo código.
+
+## Passo 1 — Criar a pasta do grafo
+
+Dentro de `src`, crie uma pasta `graph`. Nessa aula, ela vai ter dois arquivos:
+
+- `graph.ts` — a definição do estado e a função que monta o grafo (`buildGraph`).
+- `factory.ts` — o arquivo que exporta a instância `graph` que o LangGraph Studio precisa encontrar (é o caminho `./src/graph/factory.ts:graph` que o `langgraph.json` do tutorial anterior aponta).
+
+## Passo 2 — Instalar o Zod na versão certa
+
+```bash
+npm install zod@3
+```
+
+A versão `3` é usada de propósito aqui, não é um acidente: no momento da aula, o LangChain `1.x` tinha um bug conhecido que impedia a aba de chat do LangGraph Studio de funcionar com a versão mais recente do Zod. Fixar `zod@3` é o contorno encontrado numa *issue* do GitHub do projeto.
+
+## Passo 3 — Definir o formato do estado
+
+```ts
+// src/graph/graph.ts
+import { StateGraph, START, END } from "@langchain/langgraph";
+import { z } from "zod"; // zod@3
+import type { BaseMessage } from "@langchain/core/messages";
+
+const GraphStateSchema = z.object({
+  messages: z.custom<BaseMessage[]>().default(() => []),
+  output: z.string().default(""),
+  command: z.enum(["upper", "lower"]).optional(),
+});
+
+export type GraphState = z.infer<typeof GraphStateSchema>;
+```
+
+Linha a linha:
+
+- `import { StateGraph, START, END } from "@langchain/langgraph"`: os três blocos de construção do grafo. `StateGraph` é a classe que você instancia para começar a montar o fluxo; `START` e `END` são constantes especiais (não strings comuns) que marcam onde o grafo começa e termina.
+- `import { z } from "zod"`: o `z` é o ponto de entrada de toda a API do Zod — é a partir dele que você chama `z.object`, `z.string`, `z.enum`, etc. O comentário `// zod@3` fica como lembrete de que essa versão importa (não é decorativo).
+- `import type { BaseMessage }`: `import type` (em vez de `import` normal) diz ao TypeScript "eu só preciso disso para checagem de tipos, não gera nenhum código JavaScript de verdade para esse import" — deixa o bundle mais enxuto e deixa claro, para quem lê o código, que `BaseMessage` é usado só como tipo.
+- `const GraphStateSchema = z.object({ ... })`: `z.object` descreve um formato de objeto — cada chave dentro dele vira um campo obrigatório (a não ser que você marque como `.optional()`).
+  - `messages: z.custom<BaseMessage[]>().default(() => [])`: `z.custom<T>()` é usado quando você quer validar contra um tipo do TypeScript que o Zod não tem como checar em tempo de execução (nesse caso, um array de `BaseMessage`, uma classe complexa do LangChain) — ele só "confia" no tipo, sem validação real de estrutura. `.default(() => [])` diz: se ninguém passar `messages` ao criar o estado inicial, comece com um array vazio. Repare que o default é uma **função** que retorna `[]`, não o array `[]` direto — isso evita que todas as execuções do grafo compartilhem a *mesma instância* de array por referência (um erro clássico em JavaScript ao usar valores mutáveis como default).
+  - `output: z.string().default("")`: um campo de texto simples, que começa vazio.
+  - `command: z.enum(["upper", "lower"]).optional()`: `z.enum([...])` restringe o valor a **apenas** essas duas strings — se algum código tentar colocar `"invalido"` aí, o TypeScript já acusa erro de tipo antes mesmo de rodar. `.optional()` permite que o campo comece como `undefined` (é exatamente o estado antes de `identifyIntent` decidir alguma coisa, o que só acontece na próxima aula).
+- `export type GraphState = z.infer<typeof GraphStateSchema>`: `z.infer<typeof X>` é um recurso do Zod que **deriva um tipo do TypeScript a partir do schema**, em vez de você escrever o tipo à mão duas vezes (uma para validação, outra para tipagem). Ou seja, `GraphState` vira automaticamente `{ messages: BaseMessage[]; output: string; command?: "upper" | "lower" }` — e se você mudar o schema depois, o tipo se atualiza sozinho.
+
+## Passo 4 — O primeiro node: um placeholder que só repassa o estado
+
+```ts
+// src/graph/identifyIntentNode.ts
+import type { GraphState } from "./graph.ts";
+
+export function identifyIntentNode(state: GraphState): GraphState {
+  return state;
+}
+```
+
+Linha a linha:
+
+- `import type { GraphState } from "./graph.ts"`: só o tipo é necessário aqui. Repare que o import termina em `.ts`: como o projeto roda TypeScript nativo do Node (sem transpilador), o caminho do import precisa ser o caminho real do arquivo.
+- `export function identifyIntentNode(state: GraphState): GraphState`: a assinatura que **todo nó** do LangGraph segue — recebe o estado atual, devolve o estado (igual ou atualizado). É essa assinatura fixa que permite ao `StateGraph` tratar qualquer nó da mesma forma, não importa o que ele faça por dentro.
+- `return state`: por enquanto, devolve exatamente o mesmo estado recebido, sem alterar nada. É um placeholder — o objetivo aqui é só confirmar que o "fio" entre `START`, esse nó e `END` está montado corretamente antes de colocar lógica de verdade (isso vem na próxima aula).
+
+## Passo 5 — Montar o grafo linear
+
+```ts
+// src/graph/graph.ts (continuação)
+import { identifyIntentNode } from "./identifyIntentNode.ts";
+
+export function buildGraph() {
+  const workflow = new StateGraph(GraphStateSchema)
+    .addNode("identifyIntent", identifyIntentNode)
+    .addEdge(START, "identifyIntent")
+    .addEdge("identifyIntent", END);
+
+  return workflow.compile();
+}
+```
+
+Linha a linha:
+
+- `export function buildGraph()`: uma função **fábrica** — cada chamada monta um grafo novo. Isso importa para os testes: cada `createServer()` pode criar sua própria instância de grafo, sem um teste "vazar" estado para o outro.
+- `new StateGraph(GraphStateSchema)`: instancia o grafo passando o schema do Zod definido no Passo 3 — é assim que o `StateGraph` sabe qual é o formato do "objeto que anda entre os nós".
+- `.addNode("identifyIntent", identifyIntentNode)`: registra um nó com dois argumentos — uma **string identificadora** (`"identifyIntent"`, usada nas arestas para referenciar esse nó) e a **função** que efetivamente executa. Repare que o nome do nó e o nome da função podem, tecnicamente, ser diferentes — mas manter os dois iguais (como aqui) deixa o código mais fácil de rastrear.
+- `.addEdge(START, "identifyIntent")`: sempre que o grafo começar (`START`), o primeiro (e único, por enquanto) nó a rodar é `"identifyIntent"`.
+- `.addEdge("identifyIntent", END)`: depois que `identifyIntent` terminar, o grafo já termina — ainda não existe nenhuma ramificação nem nó seguinte.
+- Cada chamada `.addNode()`/`.addEdge()` **devolve o próprio `workflow`** — é por isso que dá para encadear todas essas chamadas com `.` sem precisar de uma variável intermediária a cada linha (o padrão chamado *method chaining*, o mesmo estilo usado em bibliotecas como o Fastify).
+- `return workflow.compile()`: até aqui, `workflow` só **descreve** o grafo (quais nós existem, em que ordem). `.compile()` é o passo que transforma essa descrição num objeto executável, com o método `.invoke(...)` que você vai usar na API a seguir. Sem chamar `.compile()`, o LangGraph Studio também não consegue desenhar nem rodar o grafo.
+
+## Passo 6 — Exportar o grafo para o LangGraph Studio
+
+```ts
+// src/graph/factory.ts
+import { buildGraph } from "./graph.ts";
+
+export const graph = buildGraph();
+```
+
+Linha a linha:
+
+- `import { buildGraph } from "./graph.ts"`: importa a fábrica criada no Passo 5.
+- `export const graph = buildGraph()`: chama a fábrica **uma vez** e exporta o resultado já compilado com o nome `graph` — é exatamente esse nome que o `langgraph.json` (visto no tutorial anterior) referencia em `"./src/graph/factory.ts:graph"`. Sem essa exportação com esse nome exato, o LangGraph Studio não encontra o grafo e a interface não abre corretamente.
+
+## Passo 7 — Ligar o grafo na rota HTTP
+
+```ts
+// src/server.ts (trecho relevante)
+import Fastify from "fastify";
+import { HumanMessage } from "@langchain/core/messages";
+import { buildGraph } from "./graph/graph.ts";
+
+export function createServer() {
+  const app = Fastify();
+  const graph = buildGraph();
+
+  app.post("/chat", async (request, reply) => {
+    const { question } = request.body as { question: string };
+
+    const response = await graph.invoke({
+      messages: [new HumanMessage(question)],
+    });
+
+    reply.send(response.output);
+  });
+
+  return app;
+}
+```
+
+Linha a linha:
+
+- `const graph = buildGraph()`: repare que essa linha fica **fora** da rota, dentro de `createServer()` — o grafo é montado **uma vez** quando o servidor é criado, não a cada requisição. Montar de novo a cada chamada seria desperdício de trabalho, já que a estrutura do grafo não muda entre requisições.
+- `const { question } = request.body as { question: string }`: extrai o campo `question` do corpo da requisição, com uma anotação de tipo (`as { question: string }`) para o TypeScript saber o formato esperado — o mesmo padrão já usado nas rotas do módulo anterior.
+- `await graph.invoke({ messages: [new HumanMessage(question)] })`: `invoke` é o método (criado pelo `.compile()` do Passo 5) que efetivamente **executa** o grafo do `START` até o `END`. O argumento é o **estado inicial** — repare que só o campo `messages` é passado explicitamente; os campos `output` e `command` não precisam ser informados porque o schema do Zod (Passo 3) já define valores `.default(...)` para eles. `invoke` é `async` porque, mais pra frente (quando um nó chamar de verdade um modelo de IA), essa chamada vai envolver uma requisição de rede — por isso o `await` já está preparado desde já.
+- `new HumanMessage(question)`: embrulha o texto do usuário na classe correta — é assim que o LangChain sabe, dentro do grafo, "quem" disse esse texto (o usuário, e não o sistema ou a própria IA).
+- `reply.send(response.output)`: `graph.invoke(...)` devolve o **estado final** depois de passar por todos os nós até o `END`. Nesse ponto da aula, `response.output` ainda sai vazio (`""`), porque nenhum nó preencheu esse campo ainda — o `identifyIntentNode` só devolve o estado como recebeu. Isso é esperado: essa aula só valida a **fiação** do grafo, não a lógica.
+
+## Passo 8 — Rodar e conferir no LangGraph Studio
+
+```bash
+npm run dev
+```
+
+Abra o LangGraph Studio (o comando visto no tutorial anterior) e confira: o grafo desenhado deve mostrar `START → identifyIntent → END`. Digite qualquer coisa no chat — a resposta ainda não vem preenchida, mas você já consegue clicar no nó `identifyIntent` na trilha de execução e ver o `state` (JSON) circulando entre `START` e `END`.
+
+## Onde isso te deixa
+
+Você tem o esqueleto mínimo de um grafo funcionando: um estado tipado com Zod, um nó (mesmo que ainda vazio) e uma rota HTTP que já invoca esse grafo de ponta a ponta. Na [próxima aula](03-tutorial-nodes-e-edges-lineares.md), o `identifyIntentNode` ganha lógica de verdade e aparece um segundo nó, `chatResponse`, que formata a resposta final.
+
+## Verifique seu entendimento
+
+1. Por que `messages` usa `.default(() => [])` em vez de `.default([])`?
+2. O que `z.infer<typeof GraphStateSchema>` evita que você tivesse que fazer manualmente?
+3. Qual a diferença entre o que `workflow` representa antes e depois de chamar `.compile()`?
+4. Por que o nome exportado em `factory.ts` precisa ser exatamente `graph`?
+</script>
+
+<script type="text/plain" id="doc-03-artigo">
+# Da caixa vazia à lógica de verdade: identifyIntent e chatResponse
+
+> Aula "Criando estrutura inicial de nodes e edges no LangChain".
+> Continuação de [O estado do grafo: a ficha que passa de nó em nó](02-artigo-estado-e-primeiro-node.md).
+
+## Onde a gente parou
+
+Na aula anterior, o grafo tinha um único nó (`identifyIntent`), que só recebia o estado e devolvia ele intacto — um placeholder para confirmar que `START → identifyIntent → END` estava "fiado" corretamente. Essa aula faz esse nó **pensar de verdade** (mesmo que ainda sem IA) e adiciona um segundo nó, que formata a resposta final.
+
+## `identifyIntent` deixa de ser um placeholder
+
+A primeira mudança de verdade: `identifyIntent` passa a **ler a última mensagem** do array `messages` e decidir, com uma checagem de texto bem simples (sem nenhuma IA ainda), qual vai ser o `command`:
+
+- Se o texto contém a palavra "upper" → `command = "upper"`.
+- Se contém "lower" → `command = "lower"`.
+- Se não bater com nenhuma das duas → `command` continua indefinido.
+
+O ponto pedagógico aqui: o nó **não decide** para onde o fluxo vai — ele só anota uma informação no estado (`command`). Quem vai decidir o próximo passo, usando essa informação, é uma aresta condicional — só que essa parte fica para a próxima aula. Por enquanto, o fluxo continua **linear**: o `command` já é calculado e visível no LangGraph Studio, mas ainda não muda o caminho percorrido.
+
+Além do `command`, o nó também copia o texto de entrada para o campo `output` — é esse valor que os próximos nós de transformação (`upperCaseNode`, `lowerCaseNode`, criados só na próxima aula) vão usar como ponto de partida.
+
+## O segundo nó: `chatResponse`
+
+Todo grafo que serve como chatbot precisa de um ponto de saída que formate a resposta de um jeito que o LangGraph Studio (e qualquer cliente) reconheça como "mensagem da IA". É esse o papel do nó `chatResponse`: ele pega o que já está em `state.output` e embrulha numa `AIMessage`, adicionando essa mensagem ao histórico (`messages`).
+
+Por que embrulhar numa classe específica (`AIMessage`), em vez de simplesmente devolver a string? Porque o LangChain organiza conversas em torno do conceito de **papéis** — quem disse o quê. Isso importa mesmo sem IA nenhuma rodando ainda: é esse mesmo mecanismo que, mais pra frente, vai permitir que um modelo de linguagem "leia" o histórico e saiba diferenciar o que o usuário perguntou do que ele mesmo (o modelo) já respondeu antes.
+
+## Ligando os dois nós (ainda sem condicional)
+
+O grafo passa a ter essa forma:
+
+```
+START → identifyIntent → chatResponse → END
+```
+
+Ainda é uma linha reta — não existe ramificação nesse ponto. Mas já é suficiente para, testando pelo chat do LangGraph Studio, ver a resposta voltando formatada (mesmo que hoje ela seja só o texto original repetido, já que ainda não existe nenhum nó que realmente transforme o texto em maiúsculo ou minúsculo).
+
+## Por que construir em passos tão pequenos?
+
+Pode parecer devagar demais adicionar um nó de cada vez, testando a cada mudança — mas é exatamente essa disciplina que evita um problema comum ao montar grafos: quando várias peças mudam ao mesmo tempo (schema do estado, nós, arestas condicionais), fica difícil saber qual das mudanças quebrou o quê. Construindo nó a nó, aresta a aresta, sempre confirmando no LangGraph Studio antes de seguir, cada problema aparece isolado, no passo em que foi introduzido.
+
+## Fechando o raciocínio
+
+Com `identifyIntent` calculando `command` de verdade e `chatResponse` formatando a saída, o grafo já tem os dois "extremos" prontos: início (identificação) e fim (resposta). O que falta — e é o assunto da [próxima aula](04-artigo-pipeline-condicional-e-testes.md) — é usar esse `command` para **de fato** desviar o fluxo entre diferentes nós de processamento.
+
+Para o passo a passo com o código completo explicado linha a linha, veja o [tutorial complementar](03-tutorial-nodes-e-edges-lineares.md).
+</script>
+
+<script type="text/plain" id="doc-03-tutorial">
+# Tutorial: implementando identifyIntent e chatResponse
+
+> Continuação prática de [Da caixa vazia à lógica de verdade: identifyIntent e chatResponse](03-artigo-nodes-e-edges-lineares.md).
+> Continua o projeto do [tutorial da aula 2](02-tutorial-estado-e-primeiro-node.md).
+>
+> Este tutorial explica **cada trecho de código linha a linha** — a ideia não é só copiar e colar, mas entender o porquê de cada decisão antes de seguir para a próxima aula.
+
+## O que você vai construir
+
+Duas mudanças no grafo criado na aula anterior: `identifyIntentNode` ganha lógica de verdade (decide um `command` a partir do texto), e um novo nó `chatResponseNode` formata a resposta final. O grafo continua **linear** — a ramificação condicional só entra na próxima aula.
+
+```
+START → identifyIntent → chatResponse → END
+```
+
+## Passo 1 — Implementar `identifyIntentNode`
+
+```ts
+// src/graph/identifyIntentNode.ts
+import type { GraphState } from "./graph.ts";
+
+export function identifyIntentNode(state: GraphState): GraphState {
+  const lastMessage = state.messages.at(-1);
+  const input = lastMessage?.text ?? "";
+  const inputLower = input.toLowerCase();
+
+  let command: GraphState["command"];
+  if (inputLower.includes("upper")) {
+    command = "upper";
+  } else if (inputLower.includes("lower")) {
+    command = "lower";
+  }
+
+  return { ...state, command, output: input };
+}
+```
+
+Linha a linha:
+
+- `const lastMessage = state.messages.at(-1)`: `.at(-1)` é a forma moderna de pegar o **último item de um array** (equivalente a `array[array.length - 1]`, mas mais legível e sem risco de errar a conta do índice).
+- `const input = lastMessage?.text ?? ""`: dois operadores encadeados. O `?.` (optional chaining) evita que o código quebre com um erro de "cannot read property of undefined" caso `lastMessage` seja `undefined` (por exemplo, se o array `messages` estiver vazio). O `?? ""` (nullish coalescing) entra em ação se o resultado de `lastMessage?.text` for `null` ou `undefined`, substituindo por uma string vazia — assim `input` nunca fica `undefined`, sempre é uma `string`.
+- `const inputLower = input.toLowerCase()`: normaliza o texto para minúsculo antes de comparar, para que `"UPPER"`, `"Upper"` e `"upper"` sejam todos reconhecidos igual — evita ter que checar várias variações de capitalização manualmente.
+- `let command: GraphState["command"]`: `GraphState["command"]` é um **acesso indexado de tipo** — em vez de repetir o tipo `"upper" | "lower" | undefined` na mão, ele "pergunta" ao tipo `GraphState` qual é o tipo do campo `command`. Se o schema do estado (da aula anterior) mudar, esse tipo se ajusta sozinho.
+- O `if`/`else if` com `.includes(...)`: a lógica de decisão mais simples possível — sem nenhuma IA, só verifica se a substring aparece no texto. É proposital ser tão simples: o objetivo dessa fase é entender o **mecanismo de roteamento**, não construir um classificador de intenção sofisticado (isso fica para uma aula futura, com um modelo de verdade).
+- Se nenhuma das duas condições bater, `command` continua `undefined` — na próxima aula, é exatamente esse `undefined` que vai cair no caso `default` do roteador condicional e mandar o fluxo para um nó de fallback.
+- `return { ...state, command, output: input }`: o **spread operator** (`...state`) copia todos os campos do estado atual para um objeto novo, e na sequência `command` e `output: input` sobrescrevem só esses dois campos. Esse padrão — nunca alterar o objeto `state` recebido diretamente, sempre devolver uma cópia atualizada — é o mesmo princípio de imutabilidade que você já viu em `reducers` ou em atualizações de estado no frontend: evita bugs sutis de um nó alterar um objeto que outro nó ainda está usando.
+
+## Passo 2 — Criar `chatResponseNode`
+
+```ts
+// src/graph/chatResponseNode.ts
+import { AIMessage } from "@langchain/core/messages";
+import type { GraphState } from "./graph.ts";
+
+export function chatResponseNode(state: GraphState): GraphState {
+  const responseMessage = new AIMessage(state.output);
+
+  return {
+    ...state,
+    messages: [...state.messages, responseMessage],
+  };
+}
+```
+
+Linha a linha:
+
+- `import { AIMessage } from "@langchain/core/messages"`: `AIMessage` é uma classe do LangChain que representa uma mensagem "dita" pela IA (em contraste com `HumanMessage`, do usuário, e `SystemMessage`, de instruções de sistema). Embrulhar o texto nessa classe — em vez de deixar como string solta — é o que faz o LangGraph Studio reconhecer e exibir a mensagem corretamente na aba de chat.
+- `const responseMessage = new AIMessage(state.output)`: cria a instância passando `state.output` — o texto que já foi processado por `identifyIntentNode` no Passo 1 (por enquanto, é o mesmo texto original, já que ainda não existe nenhum nó de transformação de verdade).
+- `messages: [...state.messages, responseMessage]`: de novo o spread operator, agora num array — copia todas as mensagens já existentes e **adiciona** a nova no final, sem alterar o array original. É o mesmo raciocínio de imutabilidade do Passo 1, aplicado a um array em vez de um objeto.
+- Repare que `output` **não** é alterado aqui — o nó só empacota o que já estava pronto dentro de uma mensagem formal.
+
+## Passo 3 — Ligar `chatResponse` depois de `identifyIntent`
+
+```ts
+// src/graph/graph.ts (continuação)
+import { identifyIntentNode } from "./identifyIntentNode.ts";
+import { chatResponseNode } from "./chatResponseNode.ts";
+
+export function buildGraph() {
+  const workflow = new StateGraph(GraphStateSchema)
+    .addNode("identifyIntent", identifyIntentNode)
+    .addNode("chatResponse", chatResponseNode)
+    .addEdge(START, "identifyIntent")
+    .addEdge("identifyIntent", "chatResponse")
+    .addEdge("chatResponse", END);
+
+  return workflow.compile();
+}
+```
+
+Linha a linha (o que mudou em relação à aula anterior):
+
+- `.addNode("chatResponse", chatResponseNode)`: registra o segundo nó — precisa acontecer antes de qualquer aresta poder referenciá-lo.
+- `.addEdge("identifyIntent", "chatResponse")`: substitui a aresta antiga que ia direto para `END`. Agora, depois de `identifyIntent`, o fluxo **sempre** passa por `chatResponse` primeiro.
+- `.addEdge("chatResponse", END)`: só depois de `chatResponse` formatar a resposta é que o grafo termina.
+
+> **Erro comum nesse passo:** esquecer a extensão `.ts` nos imports relativos entre os arquivos do grafo — isso gera erro de "módulo não encontrado" ao rodar os testes. Confira as extensões se algo quebrar de repente depois de criar um novo arquivo de nó.
+
+## Passo 4 — Conferir no LangGraph Studio
+
+Rode `npm run dev` e abra o LangGraph Studio. No chat, envie uma mensagem contendo "upper" ou "lower" — por exemplo, `"faça isso ficar em upper case"`. Clique no nó `identifyIntent` na trilha de execução e confira, no `state` (JSON), que o campo `command` já vem preenchido corretamente.
+
+Repare que, mesmo com `command` calculado certinho, a resposta final que volta pelo chat **ainda é o texto original**, sem nenhuma transformação — isso é esperado, porque ainda não existe nenhum nó que use `command` para de fato mudar `output`. Essa etapa (a aresta condicional de verdade) é o assunto da [próxima aula](04-tutorial-pipeline-condicional-e-testes.md).
+
+## Onde isso te deixa
+
+O grafo agora tem uma lógica real de decisão (`identifyIntent` calcula `command` a partir do texto) e um nó de formatação de resposta (`chatResponse`), mas o fluxo ainda é uma linha reta. Na próxima aula, você vai transformar essa linha reta numa ramificação condicional de verdade — o `command` calculado aqui vai finalmente decidir para onde o grafo desvia.
+
+## Verifique seu entendimento
+
+1. Por que `identifyIntentNode` usa `?.` e `??` juntos ao ler `lastMessage?.text ?? ""`? O que cada um resolve?
+2. Se `identifyIntentNode` não reconhecer nenhuma palavra-chave no texto, qual é o valor final de `command`?
+3. Por que `chatResponseNode` usa `[...state.messages, responseMessage]` em vez de `state.messages.push(responseMessage)`?
+4. Nessa aula, `command` já é calculado corretamente, mas a resposta final ainda não muda de acordo com ele. Por quê?
+</script>
+
+<script type="text/plain" id="doc-04-artigo">
+# Arestas condicionais: o fluxo que se ramifica de verdade
+
+> Aula "Criando pipeline completo com fluxos condicionais e testes automatizados".
+> Continuação de [Da caixa vazia à lógica de verdade: identifyIntent e chatResponse](03-artigo-nodes-e-edges-lineares.md).
+
+## Onde a gente parou
+
+Na aula anterior, `identifyIntent` já calculava um `command` (`"upper"`, `"lower"` ou indefinido) a partir do texto recebido — mas esse valor ainda não influenciava em nada o caminho percorrido pelo grafo, que continuava sendo uma linha reta até `chatResponse`. Essa aula finalmente usa esse `command` para **desviar o fluxo de verdade**, além de criar os dois nós que fazem a transformação de texto propriamente dita.
+
+## Dois nós quase idênticos: `upperCaseNode` e `lowerCaseNode`
+
+Antes de mexer no roteamento, a aula cria os nós que efetivamente processam o texto: um aplica `.toUpperCase()`, o outro `.toLowerCase()`, cada um atualizando o campo `output` do estado. São nós propositalmente simples e "burros" — cada um faz **uma única coisa**, sem se preocupar com formatação de resposta (isso continua sendo trabalho do `chatResponse`) nem com decidir se deveria ser chamado ou não (isso é trabalho da aresta condicional).
+
+Essa separação de responsabilidades é o que torna o grafo fácil de testar em pedaços: dá para confirmar que `upperCaseNode` faz exatamente o que promete, sem precisar rodar o grafo inteiro.
+
+## A aresta condicional: uma função que decide o destino
+
+Até aqui, toda aresta criada era **fixa**: "depois de A, sempre vai para B". Uma **aresta condicional** (*conditional edge*) é diferente — em vez de um destino fixo, ela usa uma função que **olha o estado e decide, na hora, para qual nó ir**.
+
+A função de decisão, nessa aula, é só um `switch` sobre `state.command`: se for `"upper"`, vai para o nó de maiúsculo; se for `"lower"`, vai para o de minúsculo; qualquer outro caso (inclusive `command` indefinido) cai num caminho padrão — que, por enquanto, ainda não existe como nó de verdade (isso é criado só na próxima aula, o `fallbackNode`).
+
+Esse é um padrão comum em qualquer sistema que decide **para onde ir** baseado em algum critério: sempre existe um caso "padrão" (o `default` do `switch`) cobrindo tudo que não bate com as opções esperadas — nunca deixar esse caso sem tratamento é o que evita que o sistema trave diante de uma entrada inesperada.
+
+## Como o grafo passa a se desenhar
+
+Depois de registrar a aresta condicional, o grafo deixa de ser uma linha reta e passa a ter uma ramificação visível no LangGraph Studio: a partir de `identifyIntent`, três setas diferentes podem ser seguidas (uma para cada valor possível de `command`, incluindo o caso padrão), e todas elas convergem de novo no mesmo lugar — `chatResponse` — antes de terminar. Esse formato de "leque que se abre e depois converge" é extremamente comum em agentes de IA: várias estratégias de processamento diferentes, mas sempre passando pelo mesmo ponto final de formatação de resposta.
+
+## Testes: confirmando cada rota isoladamente
+
+Seguindo o mesmo estilo de TDD (*test-driven development*) já usado nos módulos anteriores, cada rota do fluxo condicional ganha seu próprio teste: um envia um texto pedindo "upper case" e espera a resposta toda em maiúsculo; outro pede "lower case" e espera o oposto. Isso confirma, de ponta a ponta (da requisição HTTP até a resposta), que o roteamento está funcionando — não só que a função de decisão devolve a string certa, mas que o grafo inteiro, executado via API, produz o resultado esperado.
+
+## Um detalhe chato de import que gera erro silencioso
+
+Ao criar vários arquivos novos de nó em sequência, é fácil esquecer a extensão `.ts` nos imports relativos entre eles — e o efeito não é um erro de tipo bonitinho, é um erro de "módulo não encontrado" só ao rodar os testes. Vale conferir sistematicamente as extensões de import toda vez que um novo arquivo é criado e o projeto começa a reclamar do nada.
+
+## Fechando o raciocínio
+
+Com `upperCaseNode`, `lowerCaseNode` e a aresta condicional registrados, o grafo já processa de verdade dois dos três caminhos possíveis. Falta só o terceiro — o que acontece quando `command` não é nem `"upper"` nem `"lower"` — que é justamente o assunto da [próxima aula](05-artigo-fallback-e-ajustes-finais.md).
+
+Para o passo a passo com o código completo explicado linha a linha, veja o [tutorial complementar](04-tutorial-pipeline-condicional-e-testes.md).
+</script>
+
+<script type="text/plain" id="doc-04-tutorial">
+# Tutorial: nós de transformação e aresta condicional
+
+> Continuação prática de [Arestas condicionais: o fluxo que se ramifica de verdade](04-artigo-pipeline-condicional-e-testes.md).
+> Continua o projeto do [tutorial da aula 3](03-tutorial-nodes-e-edges-lineares.md).
+>
+> Este tutorial explica **cada trecho de código linha a linha** — a ideia não é só copiar e colar, mas entender o porquê de cada decisão antes de seguir para a próxima aula.
+
+## O que você vai construir
+
+Dois nós de transformação de texto (`upperCaseNode`, `lowerCaseNode`) e a primeira **aresta condicional** de verdade, que usa o `command` calculado na aula anterior para desviar o fluxo:
+
+```
+START → identifyIntent ─┬─ "upper" → upperCaseNode  ─┐
+                         ├─ "lower" → lowerCaseNode  ─┼─→ chatResponse → END
+                         └─ (default, ainda sem nó)  ─┘
+```
+
+## Passo 1 — Escrever o teste antes da implementação (TDD)
+
+Exemplo de caso: enviar uma mensagem pedindo para deixar o texto em maiúsculo, e esperar que a resposta venha transformada:
+
+```ts
+// tests/graph.test.ts
+import { test } from "node:test";
+import assert from "node:assert";
+import { createServer } from "../src/server.ts";
+
+test("command upper - transforma a mensagem em upper case", async () => {
+  const app = createServer();
+
+  const response = await app.inject({
+    method: "POST",
+    url: "/chat",
+    payload: { question: "make this message upper please" },
+  });
+
+  const expected = "MAKE THIS MESSAGE UPPER PLEASE";
+  assert.deepEqual(response.body, expected);
+});
+```
+
+Linha a linha:
+
+- `payload: { question: "make this message upper please" }`: a palavra `"upper"` dentro da frase é o gatilho que `identifyIntentNode` (implementado na aula anterior) procura para decidir o `command`.
+- `const expected = "MAKE THIS MESSAGE UPPER PLEASE"`: a frase inteira em maiúsculo — o teste está validando que **a frase inteira** é transformada, não só a palavra "upper".
+- `assert.deepEqual(response.body, expected)`: compara o corpo da resposta com o texto esperado. `deepEqual` (em vez de `strictEqual`) é usado aqui porque, dependendo de como a rota serializa a resposta, o corpo pode não ser uma string primitiva simples — `deepEqual` compara valor por valor em vez de exigir identidade estrita.
+
+Rode o teste e confirme que ele falha (ainda não existe a transformação nem o roteamento) — é esperado. À medida que os próximos passos forem implementados, esse teste (e sua variação com `"lower"`) devem passar.
+
+## Passo 2 — Criar `upperCaseNode` e `lowerCaseNode`
+
+```ts
+// src/graph/upperCaseNode.ts
+import type { GraphState } from "./graph.ts";
+
+export function upperCaseNode(state: GraphState): GraphState {
+  return { ...state, output: state.output.toUpperCase() };
+}
+```
+
+```ts
+// src/graph/lowerCaseNode.ts
+import type { GraphState } from "./graph.ts";
+
+export function lowerCaseNode(state: GraphState): GraphState {
+  return { ...state, output: state.output.toLowerCase() };
+}
+```
+
+Linha a linha (vale para os dois arquivos, só muda o método de string usado):
+
+- `state.output.toUpperCase()` / `.toLowerCase()`: `state.output` chega até aqui já preenchido pelo `identifyIntentNode` (aula anterior), que copiou o texto original da mensagem para esse campo. Cada um desses nós faz **uma única transformação**, focada — não decide rota, não formata mensagem, só transforma o texto. Essa responsabilidade única é o que torna fácil testar cada nó isoladamente, se quiser (chamando a função direto com um `state` fake, sem precisar rodar o grafo inteiro).
+- `{ ...state, output: ... }`: o mesmo padrão de imutabilidade dos nós anteriores — todo o resto do estado (`messages`, `command`) segue inalterado, só `output` é sobrescrito.
+
+Repare que nenhum dos dois nós mexe em `messages` — quem embrulha o resultado final numa `AIMessage` e adiciona ao histórico continua sendo o `chatResponseNode` (criado na aula anterior), que vem depois na cadeia.
+
+## Passo 3 — A função de roteamento
+
+```ts
+// src/graph/graph.ts (continuação)
+function routeByCommand(state: GraphState): string {
+  switch (state.command) {
+    case "upper":
+      return "upperCaseNode";
+    case "lower":
+      return "lowerCaseNode";
+    default:
+      return "fallbackNode";
+  }
+}
+```
+
+Linha a linha:
+
+- `function routeByCommand(state: GraphState): string`: essa função **não é um nó** — repare que ela não retorna um `GraphState`, retorna uma `string`. É uma **função de roteamento**: recebe o estado atual e devolve o **nome do próximo nó** a ser executado.
+- `switch (state.command)`: examina o campo que `identifyIntentNode` preencheu na aula anterior.
+- `case "upper": return "upperCaseNode"`: se o comando identificado foi `"upper"`, o próximo nó a rodar é aquele cujo identificador é a string `"upperCaseNode"` — que precisa bater exatamente com o nome usado em `.addNode(...)` no próximo passo.
+- `case "lower": return "lowerCaseNode"`: mesma lógica para o caso `"lower"`.
+- `default: return "fallbackNode"`: cobre **tudo o que não é `"upper"` nem `"lower"`** — inclusive `undefined`, que é o valor que `command` tem quando `identifyIntentNode` não reconheceu nenhuma palavra-chave. Repare que essa função já referencia `"fallbackNode"`, mesmo que esse nó só seja criado na próxima aula — por enquanto, se esse caso for atingido, o grafo vai dar erro ao tentar rotear para um nó que ainda não existe. Isso é esperado nesse ponto: essa aula foca só nos caminhos `"upper"` e `"lower"`.
+
+## Passo 4 — Registrar os nós e a aresta condicional
+
+```ts
+// src/graph/graph.ts (continuação)
+import { upperCaseNode } from "./upperCaseNode.ts";
+import { lowerCaseNode } from "./lowerCaseNode.ts";
+
+export function buildGraph() {
+  const workflow = new StateGraph(GraphStateSchema)
+    .addNode("identifyIntent", identifyIntentNode)
+    .addNode("upperCaseNode", upperCaseNode)
+    .addNode("lowerCaseNode", lowerCaseNode)
+    .addNode("chatResponse", chatResponseNode)
+    .addEdge(START, "identifyIntent")
+    .addConditionalEdges("identifyIntent", routeByCommand, {
+      upperCaseNode: "upperCaseNode",
+      lowerCaseNode: "lowerCaseNode",
+    })
+    .addEdge("upperCaseNode", "chatResponse")
+    .addEdge("lowerCaseNode", "chatResponse")
+    .addEdge("chatResponse", END);
+
+  return workflow.compile();
+}
+```
+
+Linha a linha (o que mudou em relação à aula anterior):
+
+- `.addNode("upperCaseNode", upperCaseNode)`, `.addNode("lowerCaseNode", lowerCaseNode)`: os dois novos nós precisam ser **registrados** no grafo antes de qualquer aresta poder apontar para eles — se você esquecer de registrar um nó mas referenciá-lo numa aresta, o LangGraph acusa erro ao compilar.
+- A aresta fixa antiga `.addEdge("identifyIntent", "chatResponse")` (da aula anterior) **sai** do código — ela é substituída pela aresta condicional abaixo.
+- `.addConditionalEdges("identifyIntent", routeByCommand, { ... })`: recebe três argumentos.
+  - `"identifyIntent"`: o nó **de origem** — depois que ele terminar, a decisão de rota entra em ação.
+  - `routeByCommand`: a função do Passo 3, que examina o estado e devolve uma string.
+  - `{ upperCaseNode: "upperCaseNode", lowerCaseNode: "lowerCaseNode" }`: um **mapa de tradução** entre o que `routeByCommand` pode devolver (a chave) e o identificador real do nó no grafo (o valor). Aqui as chaves e os valores são iguais de propósito — mas essa indireção existe porque, tecnicamente, sua função de roteamento poderia devolver um código interno diferente do nome do nó, e é esse mapa que faz a tradução. Repare que **o caso `fallbackNode` não está nesse mapa ainda** — ele só é adicionado na próxima aula, quando o nó correspondente existir de verdade.
+- `.addEdge("upperCaseNode", "chatResponse")`, `.addEdge("lowerCaseNode", "chatResponse")`: duas arestas fixas — não importa qual dos dois caminhos foi seguido, ambos **convergem** para `chatResponse` antes do `END`. É esse padrão de convergência que aparece no diagrama do início do tutorial.
+
+> **Erro comum nesse passo:** esquecer a extensão `.ts` nos imports relativos entre os arquivos do grafo — isso gera erro de "módulo não encontrado" ao rodar os testes. Confira as extensões se algo quebrar de repente depois de criar um novo arquivo de nó.
+
+## Passo 5 — Rodar o teste do Passo 1 e duplicar para o caso `lower`
+
+Rode os testes — o caso de `upper` já deve passar. Duplique o teste trocando o comando para `lower`:
+
+```ts
+test("command lower - transforma a mensagem em lower case", async () => {
+  const app = createServer();
+
+  const response = await app.inject({
+    method: "POST",
+    url: "/chat",
+    payload: { question: "make this message lower please" },
+  });
+
+  const expected = "make this message lower please";
+  assert.deepEqual(response.body, expected);
+});
+```
+
+A única diferença em relação ao teste do Passo 1 é a palavra-chave (`"lower"` em vez de `"upper"`) e o resultado esperado (tudo minúsculo). Confirme que os dois testes passam.
+
+Se você testar com um comando que não existe (ex.: `"comando desconhecido"`), o grafo vai tentar rotear para `"fallbackNode"` (Passo 3) e dar erro, porque esse nó ainda não foi criado nem registrado — isso é resolvido na [próxima aula](05-tutorial-fallback-e-ajustes-finais.md).
+
+## Onde isso te deixa
+
+O grafo agora ramifica de verdade: `identifyIntent` decide, `routeByCommand` traduz essa decisão numa rota, e os nós `upperCaseNode`/`lowerCaseNode` processam o texto antes de convergir em `chatResponse`. Falta só cobrir o caminho "não reconheci o comando" — o que fica para a última aula dessa sequência.
+
+## Verifique seu entendimento
+
+1. Qual a diferença entre um **nó** (`addNode`) e a **função de roteamento** usada em `addConditionalEdges` — em termos do que cada um recebe e do que cada um devolve?
+2. No mapa passado como terceiro argumento de `addConditionalEdges`, por que existem chave e valor, se aqui eles são sempre iguais?
+3. O que acontece, nesse ponto do tutorial, se `routeByCommand` devolver `"fallbackNode"`? Por quê?
+4. Por que `upperCaseNode` e `lowerCaseNode` não criam uma `AIMessage` nem mexem em `messages`?
+</script>
+
+<script type="text/plain" id="doc-05-artigo">
+# O caminho padrão: fallback, histórico de mensagens e a API por fora
+
+> Aula "Definindo node de fallback, implementando casos de teste restantes".
+> Continuação de [Arestas condicionais: o fluxo que se ramifica de verdade](04-artigo-pipeline-condicional-e-testes.md).
+> Fecha a sequência de aulas do módulo 2 dedicada a nós, arestas e roteamento condicional.
+
+## Onde a gente parou
+
+O grafo já roteava de verdade entre `upperCaseNode` e `lowerCaseNode`, mas a função de roteamento (`routeByCommand`) já apontava para um terceiro caminho — `"fallbackNode"` — que ainda não existia como nó registrado. Essa aula fecha esse buraco e usa o resultado para revisar um detalhe sutil sobre como o LangChain trata mensagens.
+
+## O nó de fallback: o que fazer quando nada bate
+
+Todo roteamento condicional precisa de uma rota padrão para quando nenhuma das opções esperadas se encaixa. Na aula, o `fallbackNode` simplesmente devolve uma mensagem fixa avisando que o comando não foi reconhecido, sugerindo as opções válidas (`upper case` ou `lower case`).
+
+Isso não é só um detalhe de exemplo — é uma prática importante em qualquer sistema que decide baseado em texto (seja com `if`s simples como neste grafo, seja mais pra frente com uma IA de verdade decidindo): a entrada do usuário é imprevisível, então o fluxo **sempre** precisa de uma rota de saída para o caso "não reconheci o que você pediu", evitando que a aplicação trave ou quebre silenciosamente.
+
+Com o `fallbackNode` registrado, o grafo finalmente fica completo:
+
+```
+START → identifyIntent ─┬─ "upper" → upperCaseNode  ─┐
+                         ├─ "lower" → lowerCaseNode  ─┼─→ chatResponse → END
+                         └─ (nenhum) → fallbackNode  ─┘
+```
+
+Repare a forma do desenho: **três caminhos diferentes convergem no mesmo lugar** (`chatResponse`) antes de terminar. Isso é bem comum em fluxos de IA: várias estratégias diferentes, mas sempre passando pelo mesmo ponto de formatação final da resposta.
+
+## Explorando a trilha de execução no LangGraph Studio
+
+Com o grafo completo, a aula reforça um dos maiores diferenciais do LangGraph Studio: dá para clicar em **New Thread**, mandar mensagens diferentes, e ver — passo a passo — exatamente qual caminho cada uma percorreu. Clicando em qualquer etapa da execução, é possível inspecionar o `state` (JSON) naquele ponto exato: o que mudou, quando mudou, e por qual nó. É esse nível de visibilidade que faz o Studio funcionar como um "raio-x" da aplicação, útil no dia a dia mesmo em grafos bem maiores do que esse exemplo.
+
+## Um detalhe sutil sobre os tipos de mensagem
+
+Testando o `fallbackNode`, aparece uma observação interessante sobre como o LangChain trata mensagens. Existem (pelo menos) três "papéis":
+
+- `HumanMessage` — o que o usuário digitou.
+- `AIMessage` — o que a IA (ou, nesse exemplo sem IA, o próprio código) respondeu.
+- `SystemMessage` — instruções de contexto/sistema.
+
+A primeira versão do `fallbackNode` cria sua própria `AIMessage` e adiciona ao histórico — só que o nó seguinte, `chatResponse`, **também** cria uma `AIMessage` em cima do mesmo `output`. Resultado: a mensagem de fallback acaba aparecendo duplicada no log/histórico do LangGraph Studio.
+
+A prática recomendada que fica registrada: guarde no array `messages` só as mensagens que realmente fazem parte da conversa com o usuário (`HumanMessage` e, quando fizer sentido, `SystemMessage`) e use `AIMessage` só para a resposta final de verdade — a que sai do `chatResponse`. Nós intermediários (como o `fallbackNode`) não precisam criar sua própria `AIMessage`; basta preencher `output` e deixar o `chatResponse`, que já roda logo em seguida, cuidar da formatação final. Isso deixa o histórico de mensagens mais limpo e mais fácil de entender depois.
+
+## Testando pela API de verdade (não só pelo Studio)
+
+Um lembrete importante da aula: o LangGraph Studio é uma ferramenta de depuração, mas **a aplicação continua sendo uma API HTTP comum**, igual qualquer outra construída com Fastify. Ou seja, dá para testar com `curl` normalmente, sem depender do Studio — reforçando que o cliente que consome essa API nem precisa saber que existe um grafo por trás. O LangGraph organiza a *lógica interna* da aplicação, mas por fora ela continua sendo uma API igual às que você já construiu em módulos anteriores.
+
+## Fechando o módulo
+
+O fluxo completo construído ao longo dessas quatro aulas mostra o padrão mais comum em agentes de IA: um nó inicial **identifica a intenção** do que foi pedido, uma **aresta condicional roteia** para o processamento adequado, e todos os caminhos convergem num nó final que **formata a resposta** — sempre com um caminho de fallback para o caso não coberto. Trocar o `if`/`includes` simplista do `identifyIntent` por uma chamada real a um modelo de IA (pedindo para ele classificar a intenção) é exatamente o próximo passo natural, e é isso que os próximos módulos do curso exploram.
+
+### Lição de casa sugerida pela aula
+
+Dar uma navegada na documentação oficial do LangGraph, prestando atenção especial em dois recursos que essa sequência de aulas não teve tempo de cobrir:
+
+- **Memória**: como manter contexto entre conversas.
+- **Human-in-the-loop**: como fazer o fluxo **parar e perguntar** para uma pessoa antes de continuar (por exemplo, antes de uma IA remover um arquivo), de forma parecida com confirmações que você já viu em ferramentas de IA prontas.
+
+Para o passo a passo com o código completo explicado linha a linha, veja o [tutorial complementar](05-tutorial-fallback-e-ajustes-finais.md).
+</script>
+
+<script type="text/plain" id="doc-05-tutorial">
+# Tutorial: node de fallback e limpeza do histórico de mensagens
+
+> Continuação prática de [O caminho padrão: fallback, histórico de mensagens e a API por fora](05-artigo-fallback-e-ajustes-finais.md).
+> Continua o projeto do [tutorial da aula 4](04-tutorial-pipeline-condicional-e-testes.md) — este é o último tutorial da sequência de nós/arestas do módulo 2.
+>
+> Este tutorial explica **cada trecho de código linha a linha** — a ideia não é só copiar e colar, mas entender o porquê de cada decisão antes de fechar o módulo.
+
+## O que você vai construir
+
+O nó `fallbackNode`, que fecha o grafo condicional criado na aula anterior, mais um ajuste no jeito como esse nó lida com o histórico de mensagens (`messages`) para evitar duplicação. Ao final, o grafo fica assim:
+
+```
+START → identifyIntent ─┬─ "upper" → upperCaseNode  ─┐
+                         ├─ "lower" → lowerCaseNode  ─┼─→ chatResponse → END
+                         └─ (nenhum) → fallbackNode  ─┘
+```
+
+## Passo 1 — Escrever o teste do caso de fallback
+
+```ts
+// tests/graph.test.ts (continuação)
+test("comando desconhecido - retorna mensagem de fallback", async () => {
+  const app = createServer();
+
+  const response = await app.inject({
+    method: "POST",
+    url: "/chat",
+    payload: { question: "unknown command" },
+  });
+
+  const expected =
+    "Não sei que comando é esse. Tente 'upper case' ou 'convert lower case'.";
+  assert.deepEqual(response.body, expected);
+});
+```
+
+Linha a linha:
+
+- `payload: { question: "unknown command" }`: um texto que não contém nem "upper" nem "lower" — é o gatilho para `identifyIntentNode` deixar `command` indefinido, o que (pela função `routeByCommand` da aula anterior) deve cair no caso `default`.
+- `const expected = "..."`: o texto fixo que o `fallbackNode` vai devolver — definido antes da implementação existir, seguindo o mesmo TDD já usado nas aulas anteriores.
+
+Rode o teste e confirme que ele falha com um erro de execução (o grafo tenta rotear para `"fallbackNode"`, mas esse nó ainda não existe) — é esperado nesse ponto.
+
+## Passo 2 — Criar o `fallbackNode`
+
+```ts
+// src/graph/fallbackNode.ts
+import { AIMessage } from "@langchain/core/messages";
+import type { GraphState } from "./graph.ts";
+
+const FALLBACK_MESSAGE =
+  "Não sei que comando é esse. Tente 'upper case' ou 'convert lower case'.";
+
+export function fallbackNode(state: GraphState): GraphState {
+  return {
+    ...state,
+    output: FALLBACK_MESSAGE,
+    messages: [...state.messages, new AIMessage(FALLBACK_MESSAGE)],
+  };
+}
+```
+
+Linha a linha:
+
+- `const FALLBACK_MESSAGE = "..."`: extraído para uma constante nomeada em vez de repetir a string literal duas vezes dentro da função — assim, se quiser mudar o texto, só precisa editar em um lugar, e o nome `FALLBACK_MESSAGE` já documenta a intenção sem precisar de comentário.
+- `output: FALLBACK_MESSAGE`: preenche o campo que será lido pela rota HTTP como resposta final — o mesmo campo que `upperCaseNode`/`lowerCaseNode` preenchem nos outros dois caminhos.
+- `messages: [...state.messages, new AIMessage(FALLBACK_MESSAGE)]`: aqui o `fallbackNode` está fazendo, ele mesmo, o trabalho que normalmente cabe ao `chatResponseNode` — embrulhar o texto numa `AIMessage` e adicionar ao histórico. Essa linha vai ser revisada no Passo 5, porque ela duplica a mensagem no histórico (o `chatResponse`, que roda logo depois, também cria uma `AIMessage`).
+
+## Passo 3 — Registrar o nó e completar o mapa de roteamento
+
+```ts
+// src/graph/graph.ts (continuação)
+import { fallbackNode } from "./fallbackNode.ts";
+
+export function buildGraph() {
+  const workflow = new StateGraph(GraphStateSchema)
+    .addNode("identifyIntent", identifyIntentNode)
+    .addNode("upperCaseNode", upperCaseNode)
+    .addNode("lowerCaseNode", lowerCaseNode)
+    .addNode("fallbackNode", fallbackNode)
+    .addNode("chatResponse", chatResponseNode)
+    .addEdge(START, "identifyIntent")
+    .addConditionalEdges("identifyIntent", routeByCommand, {
+      upperCaseNode: "upperCaseNode",
+      lowerCaseNode: "lowerCaseNode",
+      fallbackNode: "fallbackNode",
+    })
+    .addEdge("upperCaseNode", "chatResponse")
+    .addEdge("lowerCaseNode", "chatResponse")
+    .addEdge("fallbackNode", "chatResponse")
+    .addEdge("chatResponse", END);
+
+  return workflow.compile();
+}
+```
+
+Linha a linha (o que mudou em relação à aula anterior):
+
+- `.addNode("fallbackNode", fallbackNode)`: registra o terceiro nó de processamento — sem esse registro, `routeByCommand` continuaria apontando para um nó inexistente.
+- `fallbackNode: "fallbackNode"` dentro do mapa de `addConditionalEdges`: completa a tradução que faltava — agora, quando `routeByCommand` devolver a string `"fallbackNode"`, o grafo sabe para onde ir de verdade.
+- `.addEdge("fallbackNode", "chatResponse")`: o terceiro (e último) caminho a convergir em `chatResponse`, fechando o padrão de "leque que se abre e converge" descrito no artigo.
+
+`routeByCommand` (definida na aula anterior) não precisa de nenhuma mudança — o `default: return "fallbackNode"` já estava lá desde o início, só esperando o nó correspondente existir.
+
+Rode os testes de novo — os três casos (`upper`, `lower`, comando desconhecido) devem passar agora.
+
+## Passo 4 — Conferir o grafo completo no Studio
+
+Abra o LangGraph Studio e observe o grafo: a partir de `identifyIntent`, três setas se abrem (`upperCaseNode`, `lowerCaseNode`, `fallbackNode`) e todas convergem em `chatResponse` antes do `END`. Clique em **New Thread** e mande mensagens diferentes para ver, passo a passo, qual caminho cada uma percorreu — inclusive é possível clicar em qualquer etapa da execução e inspecionar o estado (`JSON`) naquele ponto exato, útil para depuração no dia a dia.
+
+Repare, nesse teste manual, que a mensagem de fallback aparece **duplicada** no histórico do chat — é o problema descrito no Passo 2, que o próximo passo corrige.
+
+## Passo 5 — Ajuste fino: nem tudo precisa virar `AIMessage`
+
+Se, ao testar, você notar mensagens duplicadas ou "barulho" no log do Studio, revise onde está criando `new AIMessage(...)`. O caso é exatamente o `fallbackNode` do Passo 2, que cria sua própria `AIMessage` **e** ainda passa pelo `chatResponseNode` (que cria outra `AIMessage` em cima do `output`).
+
+A recomendação que fica da aula: reserve `AIMessage` para a resposta final de verdade (o que sai do `chatResponse`) e evite criar uma `AIMessage` extra dentro de nós intermediários só para guardar uma informação que já está sendo guardada em `output`. Ou seja, simplifique o `fallbackNode` removendo a criação manual de `AIMessage`:
+
+```ts
+// src/graph/fallbackNode.ts (versão ajustada)
+import type { GraphState } from "./graph.ts";
+
+const FALLBACK_MESSAGE =
+  "Não sei que comando é esse. Tente 'upper case' ou 'convert lower case'.";
+
+export function fallbackNode(state: GraphState): GraphState {
+  return { ...state, output: FALLBACK_MESSAGE };
+}
+```
+
+Removendo o campo `messages` do retorno e o `import { AIMessage }`, o nó volta a ter uma única responsabilidade: decidir o texto de saída. Quem se encarrega de transformar `output` numa `AIMessage` e adicioná-la ao histórico continua sendo, sempre, o `chatResponseNode` — que já roda logo depois, por causa da aresta `.addEdge("fallbackNode", "chatResponse")` do Passo 3. Isso deixa o histórico de mensagens mais limpo e mais fácil de entender depois. Rode os testes de novo para confirmar que continuam passando (o teste do Passo 1 valida só `output`, não `messages`, então não é afetado por essa mudança).
+
+## Passo 6 — Testar como uma API HTTP comum
+
+Depois de subir o projeto:
+
+```bash
+npm run dev
+```
+
+Teste com `curl`, sem depender do Studio:
+
+```bash
+curl -X POST http://localhost:3000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question": "faça isso ficar em upper case"}'
+```
+
+Se preferir, use o mesmo `inject` do Fastify que já vinha sendo usado nos testes automatizados — o comportamento é equivalente, só troca a chamada de rede real por uma chamada simulada em processo. O ponto importante aqui: por trás do LangGraph tem uma API HTTP comum, publicável em qualquer lugar (seu próprio servidor, o LangGraph Studio, etc.), sempre respondendo pela mesma rota (`/chat`, nesse exemplo).
+
+## Onde isso te deixa
+
+Você tem agora um pipeline completo: identificação de intenção → roteamento condicional → processamento específico → resposta formatada → fallback para o caso não coberto. Essa é a espinha dorsal de praticamente qualquer agente de IA construído com LangGraph — o próximo passo natural (fora do escopo dessa aula) é trocar o `if`/`includes` do `identifyIntent` por uma chamada de verdade a um modelo de linguagem, pedindo para ele classificar a intenção em vez de usar comparação de texto.
+
+### Lição de casa sugerida pela aula
+
+Dar uma navegada na documentação oficial do LangGraph, prestando atenção especial em dois recursos que a aula não teve tempo de cobrir:
+
+- **Memória**: como manter contexto entre conversas.
+- **Human-in-the-loop**: como fazer o fluxo **parar e perguntar** para uma pessoa antes de continuar (por exemplo, antes de uma IA remover um arquivo), de forma parecida com confirmações que você já viu em ferramentas de IA prontas.
+
+## Verifique seu entendimento
+
+1. Antes do ajuste do Passo 5, por que a mensagem de fallback aparecia duplicada no histórico do LangGraph Studio?
+2. Depois do ajuste do Passo 5, quem fica responsável por criar a `AIMessage` que representa a resposta de fallback?
+3. O que faria `routeByCommand` continuar apontando para `"fallbackNode"` mesmo depois desse nó já estar implementado, se o `addConditionalEdges` não tivesse a entrada `fallbackNode: "fallbackNode"` no mapa?
+4. Por que a aula reforça que "por trás do LangGraph tem uma API HTTP comum"? Que problema essa observação evita?
+</script>
+
+<script type="text/plain" id="doc-06-anotacao">
+# Anotação: explicação linha a linha do projeto do módulo 2
+
+Este documento explica, arquivo por arquivo e linha por linha, o projeto criado em
+`docs/curso-apis-ia-generativa/modulo02/project/` — um grafo LangGraph que recebe uma
+mensagem, decide se deve transformá-la em maiúsculas, minúsculas, ou cair num caminho
+de fallback, e devolve isso por uma rota HTTP.
+
+## Visão geral: o desenho do grafo
+
+```
+START → identifyIntent ─┬─ "upper" → upperCaseNode  ─┐
+                         ├─ "lower" → lowerCaseNode  ─┼─→ chatResponse → END
+                         └─ (nenhum) → fallbackNode  ─┘
+```
+
+E o mapa de quem chama quem no código:
+
+```
+index.ts  →  cria o servidor e sobe a API
+   │
+   └── server.ts  →  rota POST /chat, chama graph.invoke(...)
+           │
+           └── graph/graph.ts  →  monta o StateGraph inteiro
+                   │
+                   ├── identifyIntentNode.ts  (decide "command")
+                   ├── upperCaseNode.ts / lowerCaseNode.ts  (transformam texto)
+                   ├── fallbackNode.ts  (mensagem padrão se não reconheceu)
+                   └── chatResponseNode.ts  (empacota a resposta final)
+
+factory.ts  →  só exporta o grafo já montado, para o LangGraph Studio encontrar
+```
+
+---
+
+## `package.json`
+
+```json
+1  {
+2    "name": "modulo02-langgraph",
+...
+7    "scripts": {
+8      "dev": "node --env-file .env --watch src/index.ts",
+9      "test:dev": "node --env-file .env --test tests/**/*.test.ts"
+10   },
+...
+14   "dependencies": {
+15     "@langchain/langgraph": "^0.2.17",
+16     "fastify": "^5.10.0",
+17     "langchain": "^0.1.19"
+18   },
+```
+
+- **Linha 9 (`test:dev`)**: o nome do script segue exatamente o que o tutorial pede
+  (`npm run test:dev`, não só `npm test`) — mesma ideia do módulo 1: `--env-file .env`
+  carrega as variáveis de ambiente (aqui, principalmente as do LangSmith) e `--test`
+  aciona o test runner nativo do Node.
+- **Linha 15-17**: as três versões vêm **fixadas** de propósito, seguindo a
+  recomendação do tutorial ("importa porque a área de IA muda muito rápido"). Vale
+  saber: essas versões têm vulnerabilidades de segurança conhecidas nas suas
+  dependências internas (detalhe na seção final deste documento) — mantidas assim
+  aqui por ser um projeto de estudo local, sem exposição a input externo.
+- Repare que **não há `zod` nas dependências** — o tutorial original pedia para
+  instalar `zod@3`, mas essa versão de `@langchain/langgraph` não aceita um schema
+  Zod direto (ver seção do `graph.ts` abaixo), então essa dependência acabou não
+  sendo necessária neste projeto.
+
+---
+
+## `langgraph.json`
+
+```json
+1  {
+2    "graphs": {
+3      "agent": "./src/graph/factory.ts:graph"
+4    },
+5    "env": ".env"
+6  }
+```
+
+- **Linha 3**: diz ao LangGraph Studio "para rodar o grafo chamado `agent`, abra o
+  arquivo `src/graph/factory.ts` e procure por um `export` chamado `graph`". Sem essa
+  exportação existir com esse nome exato, o Studio não encontra nada para desenhar.
+- **Linha 5**: carrega o `.env` antes de rodar — é assim que `LANGSMITH_API_KEY`
+  chega até o processo que o Studio sobe internamente.
+
+---
+
+## `.env` / `.env.example`
+
+```
+1  LANGSMITH_API_KEY=cole_aqui_a_chave_que_voce_copiou_no_langsmith
+2  LANGSMITH_TRACING=true
+3  LANGSMITH_PROJECT=modulo02-langgraph
+...
+7  OPENAI_API_KEY=your-api-key-here
+```
+
+- **Linha 1 (`LANGSMITH_API_KEY`)**: autentica o projeto local com a sua conta no
+  LangSmith (o painel de observabilidade do LangChain).
+- **Linha 2 (`LANGSMITH_TRACING=true`)**: é essa variável que liga o envio automático
+  de cada execução do grafo para o painel — sem ela (ou com `false`), o código roda
+  igual, só que "no escuro" (sem visibilidade).
+- **Linha 3 (`LANGSMITH_PROJECT`)**: o nome sob o qual as execuções aparecem
+  agrupadas no painel do LangSmith.
+- **Linha 7 (`OPENAI_API_KEY`)**: deixado como referência para uma aula futura — este
+  projeto ainda **não chama nenhum modelo de IA de verdade** (o "roteamento" é feito
+  só com `.includes("upper")`/`.includes("lower")`, texto puro).
+
+---
+
+## `src/graph/graph.ts` — o coração do grafo
+
+```typescript
+1  import { StateGraph, START, END, Annotation } from "@langchain/langgraph";
+2  import type { BaseMessage } from "@langchain/core/messages";
+```
+
+- **Linha 1**: os blocos de construção do LangGraph.
+  - `StateGraph`: a classe que você instancia para começar a montar o fluxo.
+  - `START` / `END`: constantes especiais (não são strings comuns) que marcam onde o
+    grafo começa e termina.
+  - `Annotation`: a forma nativa desta versão da lib de descrever o **formato do
+    estado** — explicado em detalhe logo abaixo.
+- **Linha 2**: `import type` — só o tipo `BaseMessage` (a classe-base de toda
+  mensagem do LangChain: `HumanMessage`, `AIMessage`, etc.), sem gerar nenhum código
+  JavaScript para esse import.
+
+```typescript
+9  // @langchain/langgraph@0.2.17 (a versão pinada pelo tutorial) ainda não tem
+10 // suporte nativo a schema Zod no StateGraph — por isso o estado é definido
+11 // com `Annotation.Root`, a forma nativa desta versão. [...]
+14 const replace = <T>(_current: T, update: T) => update;
+```
+
+Esse comentário marca uma **divergência intencional** do tutorial. O material
+original ensina a definir o estado com Zod (`z.object({...})`, passado direto para
+`new StateGraph(...)`). Ao montar este projeto contra a versão realmente pinada
+(`0.2.17`), essa combinação **quebra** com o erro `Invalid StateGraph input` — suporte
+nativo a Zod só foi adicionado à biblioteca bem depois (a partir da série `0.2.60+`, e
+mesmo assim com uma API mais verbosa). A solução foi usar `Annotation.Root`, que já
+existe desde o início da `0.2.x` e representa exatamente a mesma ideia (um "molde" do
+estado, com valores padrão), só com uma sintaxe diferente da do Zod.
+
+- **Linha 14 (`replace`)**: uma função **genérica** (`<T>`) que recebe dois valores do
+  mesmo tipo e devolve o segundo, ignorando o primeiro (o `_` no nome
+  `_current` é uma convenção para "esse parâmetro existe só porque a assinatura
+  exige, mas eu não uso ele"). Essa é a peça que, na próxima seção, faz cada campo do
+  estado se comportar como "o valor mais recente escrito por um nó vence" — o mesmo
+  efeito que `.default(...)` do Zod dava, sem reducer.
+
+```typescript
+16 const GraphAnnotation = Annotation.Root({
+17   messages: Annotation<BaseMessage[]>({
+18     reducer: replace,
+19     default: () => [],
+20   }),
+21   output: Annotation<string>({
+22     reducer: replace,
+23     default: () => "",
+24   }),
+25   command: Annotation<"upper" | "lower" | undefined>({
+26     reducer: replace,
+27     default: () => undefined,
+28   }),
+29 });
+30
+31 export type GraphState = typeof GraphAnnotation.State;
+```
+
+- **Linha 16 (`Annotation.Root({...})`)**: monta o "formato do estado inteiro" — um
+  objeto onde cada chave (`messages`, `output`, `command`) é um **canal** de dados que
+  passa de nó em nó dentro do grafo.
+- **Linha 17-20 (`messages`)**: `Annotation<BaseMessage[]>({...})` declara um canal
+  cujo valor é um array de `BaseMessage`. Os dois campos dentro do objeto:
+  - `reducer: replace`: toda vez que um nó devolve um novo valor para `messages`, o
+    LangGraph chama essa função para decidir como **combinar** o valor antigo com o
+    novo. Aqui, "combinar" é simplesmente "usar o novo e descartar o antigo" — porque
+    cada nó deste projeto já devolve o array `messages` completo e atualizado (via
+    spread, como você vai ver em `chatResponseNode.ts`), não precisa que o LangGraph
+    faça nenhuma mesclagem por conta própria.
+  - `default: () => []`: se ninguém passar `messages` na primeira chamada
+    (`graph.invoke(...)`), o valor inicial é um array vazio. De novo, repare que é uma
+    **função** que retorna `[]`, não o array direto — evita que diferentes execuções
+    do grafo compartilhem a mesma instância de array por engano.
+- **Linha 21-24 (`output`)**: mesma lógica, para um campo de texto simples que começa
+  vazio (`""`).
+- **Linha 25-28 (`command`)**: o tipo `"upper" | "lower" | undefined` é um **union
+  type** — só pode valer uma dessas três coisas. `default: () => undefined` é o
+  estado antes de `identifyIntentNode` decidir alguma coisa.
+- **Linha 31**: `typeof GraphAnnotation.State` é como se extrai, a partir do objeto
+  `Annotation.Root` montado acima, o **tipo TypeScript** equivalente
+  (`{ messages: BaseMessage[]; output: string; command: "upper" | "lower" |
+  undefined }`) — o mesmo papel que `z.infer<typeof GraphStateSchema>` teria com Zod,
+  só que usando o mecanismo próprio do LangGraph em vez do Zod.
+
+```typescript
+33 function routeByCommand(state: GraphState): string {
+34   switch (state.command) {
+35     case "upper":
+36       return "upperCaseNode";
+37     case "lower":
+38       return "lowerCaseNode";
+39     default:
+40       return "fallbackNode";
+41   }
+42 }
+```
+
+- Essa função **não é um nó do grafo** — repare que ela não devolve um `GraphState`
+  inteiro, devolve uma `string`. É uma **função de roteamento**: olha o estado atual
+  e decide qual é o **nome do próximo nó** a executar.
+- `switch (state.command)`: examina o campo que `identifyIntentNode` preencheu.
+- `case "upper"` / `case "lower"`: cada valor de `command` aponta para o nó
+  correspondente — os nomes retornados (`"upperCaseNode"`, `"lowerCaseNode"`)
+  precisam bater exatamente com os identificadores usados em `.addNode(...)` mais
+  abaixo.
+- `default: return "fallbackNode"`: cobre **tudo o que não é `"upper"` nem
+  `"lower"`** — inclusive `undefined`, que é o valor padrão de `command` quando
+  `identifyIntentNode` não reconhece nenhuma palavra-chave no texto.
+
+```typescript
+44 export function buildGraph() {
+45   const workflow = new StateGraph(GraphAnnotation)
+46     .addNode("identifyIntent", identifyIntentNode)
+47     .addNode("upperCaseNode", upperCaseNode)
+48     .addNode("lowerCaseNode", lowerCaseNode)
+49     .addNode("fallbackNode", fallbackNode)
+50     .addNode("chatResponse", chatResponseNode)
+51     .addEdge(START, "identifyIntent")
+52     .addConditionalEdges("identifyIntent", routeByCommand, {
+53       upperCaseNode: "upperCaseNode",
+54       lowerCaseNode: "lowerCaseNode",
+55       fallbackNode: "fallbackNode",
+56     })
+57     .addEdge("upperCaseNode", "chatResponse")
+58     .addEdge("lowerCaseNode", "chatResponse")
+59     .addEdge("fallbackNode", "chatResponse")
+60     .addEdge("chatResponse", END);
+61
+62   return workflow.compile();
+63 }
+```
+
+- **Linha 44 (`buildGraph`)**: uma função **fábrica** — cada chamada monta um grafo
+  novo do zero. Isso importa porque `server.ts` chama essa função **dentro** de
+  `createServer()`, então cada instância de servidor tem seu próprio grafo, sem
+  compartilhar estado entre testes.
+- **Linha 45 (`new StateGraph(GraphAnnotation)`)**: instancia o grafo já com o
+  "formato do estado" definido acima — é assim que o `StateGraph` sabe qual é a
+  estrutura do objeto que anda entre os nós.
+- **Linha 46-50 (`.addNode(...)`)**: registra cada nó com dois argumentos — uma
+  **string identificadora** (usada pelas arestas para referenciar aquele nó) e a
+  **função** que efetivamente executa. Todo nó **precisa** estar registrado aqui
+  antes de qualquer aresta poder apontar para ele — senão o `.compile()` (linha 62)
+  falha.
+- **Linha 51 (`.addEdge(START, "identifyIntent")`)**: sempre que o grafo começa, o
+  primeiro nó a rodar é `identifyIntent`.
+- **Linha 52-56 (`.addConditionalEdges(...)`)**: recebe três argumentos.
+  - `"identifyIntent"`: o nó de origem — depois que ele terminar, a decisão de rota
+    entra em ação.
+  - `routeByCommand`: a função definida acima, que examina o estado e devolve uma
+    string.
+  - `{ upperCaseNode: "upperCaseNode", ... }`: um **mapa de tradução** entre o que
+    `routeByCommand` pode devolver (a chave) e o identificador real do nó no grafo (o
+    valor). Aqui eles são sempre iguais de propósito, mas essa indireção existe
+    porque, tecnicamente, a função de roteamento poderia devolver um código interno
+    diferente do nome do nó — e é esse mapa que faria a tradução.
+- **Linha 57-59**: três arestas fixas — não importa qual dos três caminhos foi
+  seguido (`upper`, `lower`, ou fallback), todos **convergem** em `chatResponse`
+  antes do fim. É esse padrão de "leque que se abre e converge" do diagrama no topo
+  deste documento.
+- **Linha 60 (`.addEdge("chatResponse", END)`)**: só depois de `chatResponse`
+  formatar a resposta é que o grafo termina de verdade.
+- **Linha 62 (`.compile()`)**: até aqui, `workflow` só **descreve** o grafo (quais
+  nós existem, em que ordem). `.compile()` transforma essa descrição num objeto
+  executável, com o método `.invoke(...)` usado em `server.ts`. Sem essa chamada, o
+  LangGraph Studio também não consegue desenhar nem rodar o grafo.
+
+---
+
+## `src/graph/identifyIntentNode.ts` — decide o comando
+
+```typescript
+1  import type { GraphState } from "./graph.ts";
+2
+3  export function identifyIntentNode(state: GraphState): GraphState {
+4    const lastMessage = state.messages.at(-1);
+5    const input = lastMessage?.text ?? "";
+6    const inputLower = input.toLowerCase();
+7
+8    let command: GraphState["command"];
+9    if (inputLower.includes("upper")) {
+10     command = "upper";
+11   } else if (inputLower.includes("lower")) {
+12     command = "lower";
+13   }
+14
+15   return { ...state, command, output: input };
+16 }
+```
+
+- **Linha 3**: essa é a assinatura que **todo nó** do LangGraph segue — recebe o
+  estado atual, devolve o estado (igual ou atualizado). É essa forma fixa que
+  permite ao `StateGraph` tratar qualquer nó da mesma maneira, não importa o que ele
+  faça por dentro.
+- **Linha 4 (`.at(-1)`)**: a forma moderna de pegar o **último item de um array**
+  (equivalente a `array[array.length - 1]`, mas mais legível).
+- **Linha 5**: dois operadores encadeados. `?.` (**optional chaining**) evita que o
+  código quebre com erro caso `lastMessage` seja `undefined` (array `messages`
+  vazio). `?? ""` (**nullish coalescing**) entra em ação se o resultado for `null` ou
+  `undefined`, substituindo por string vazia — assim `input` nunca fica indefinido.
+- **Linha 6**: normaliza para minúsculo antes de comparar, para que `"UPPER"`,
+  `"Upper"` e `"upper"` sejam todos reconhecidos igual.
+- **Linha 8 (`GraphState["command"]`)**: um **acesso indexado de tipo** — em vez de
+  repetir `"upper" | "lower" | undefined` na mão, "pergunta" ao tipo `GraphState`
+  qual é o tipo do campo `command`. Se a definição do estado mudar, esse tipo se
+  ajusta sozinho.
+- **Linha 9-13**: a lógica de decisão mais simples possível — só verifica se a
+  substring aparece no texto, sem nenhuma IA de verdade. É proposital: o objetivo
+  desta fase do curso é entender o **mecanismo de roteamento**, não construir um
+  classificador de intenção sofisticado.
+- Se nenhuma condição bater, `command` continua `undefined` — e é exatamente esse
+  `undefined` que faz `routeByCommand` cair no caso `default` (fallback).
+- **Linha 15 (`{ ...state, command, output: input }`)**: o **spread operator**
+  copia todos os campos do estado atual para um objeto novo, e na sequência
+  `command` e `output: input` sobrescrevem só esses dois campos. Esse padrão — nunca
+  alterar o `state` recebido diretamente, sempre devolver uma cópia — é o mesmo
+  princípio de imutabilidade usado em `reducers` de frontend: evita bugs sutis de um
+  nó alterar um objeto que outro nó ainda está usando.
+
+---
+
+## `src/graph/upperCaseNode.ts` e `lowerCaseNode.ts` — transformação pura
+
+```typescript
+1  import type { GraphState } from "./graph.ts";
+2
+3  export function upperCaseNode(state: GraphState): GraphState {
+4    return { ...state, output: state.output.toUpperCase() };
+5  }
+```
+
+(`lowerCaseNode.ts` é idêntico, trocando `.toUpperCase()` por `.toLowerCase()`.)
+
+- **Linha 4**: `state.output` já chega preenchido pelo `identifyIntentNode` (que
+  copiou o texto original da mensagem para esse campo). Cada um desses nós faz **uma
+  única transformação**, focada — não decide rota, não formata mensagem final, só
+  transforma o texto. Essa responsabilidade única deixa fácil testar cada nó
+  isoladamente (chamando a função direto com um `state` fake, sem rodar o grafo
+  inteiro).
+- Repare que nenhum dos dois nós mexe em `messages` — quem embrulha o resultado numa
+  `AIMessage` e adiciona ao histórico é sempre o `chatResponseNode`, que roda depois.
+
+---
+
+## `src/graph/fallbackNode.ts` — o caminho padrão
+
+```typescript
+1  import type { GraphState } from "./graph.ts";
+2
+3  const FALLBACK_MESSAGE =
+4    "Não sei que comando é esse. Tente 'upper case' ou 'convert lower case'.";
+5
+6  export function fallbackNode(state: GraphState): GraphState {
+7    return { ...state, output: FALLBACK_MESSAGE };
+8  }
+```
+
+- **Linha 3-4**: a mensagem fica numa **constante nomeada** em vez de string literal
+  repetida — se precisar mudar o texto, é um lugar só, e o nome já documenta a
+  intenção sem precisar de comentário.
+- **Linha 7**: esta é a versão **já ajustada** do nó (o tutorial original, na
+  primeira versão, também criava uma `AIMessage` aqui dentro — mas isso duplicava a
+  mensagem no histórico, porque `chatResponseNode` já faz esse trabalho logo depois).
+  A versão final mantém `fallbackNode` com uma única responsabilidade: decidir o
+  texto de saída. Quem transforma `output` numa `AIMessage` de verdade continua
+  sendo, sempre, o `chatResponseNode`.
+
+---
+
+## `src/graph/chatResponseNode.ts` — formata a resposta final
+
+```typescript
+1  import { AIMessage } from "@langchain/core/messages";
+2  import type { GraphState } from "./graph.ts";
+3
+4  export function chatResponseNode(state: GraphState): GraphState {
+5    const responseMessage = new AIMessage(state.output);
+6
+7    return {
+8      ...state,
+9      messages: [...state.messages, responseMessage],
+10   };
+11 }
+```
+
+- **Linha 1**: `AIMessage` é a classe do LangChain que representa uma mensagem
+  "dita" pela IA (em contraste com `HumanMessage`, do usuário). Embrulhar o texto
+  nessa classe — em vez de deixar como string solta — é o que faz o LangGraph Studio
+  reconhecer e exibir a mensagem corretamente na aba de chat.
+- **Linha 5**: cria a instância a partir de `state.output` — o texto que já foi
+  processado por `identifyIntent` e, dependendo do caminho, por `upperCaseNode`,
+  `lowerCaseNode` ou `fallbackNode`.
+- **Linha 9 (`[...state.messages, responseMessage]`)**: o spread operator, agora num
+  array — copia todas as mensagens já existentes e **adiciona** a nova no final, sem
+  alterar o array original. Mesmo raciocínio de imutabilidade visto nos outros nós,
+  aplicado a um array em vez de um objeto.
+- Repare que este é o **único** nó que mexe em `messages` na versão final do grafo —
+  é aqui, e só aqui, que o histórico de conversa realmente cresce.
+
+---
+
+## `src/graph/factory.ts` — a porta de entrada do LangGraph Studio
+
+```typescript
+1  import { buildGraph } from "./graph.ts";
+2
+3  export const graph = buildGraph();
+```
+
+- **Linha 3**: chama a fábrica **uma vez** e exporta o grafo já compilado com o nome
+  `graph` — exatamente o nome que `langgraph.json` referencia em
+  `"./src/graph/factory.ts:graph"`. Sem essa exportação com esse nome exato, o
+  LangGraph Studio não encontra o grafo.
+
+---
+
+## `src/server.ts` — a rota HTTP `/chat`
+
+```typescript
+1  import Fastify from "fastify";
+2  import { HumanMessage } from "@langchain/core/messages";
+3  import { buildGraph } from "./graph/graph.ts";
+4
+5  export function createServer() {
+6    const app = Fastify();
+7    const graph = buildGraph();
+8
+9    app.post("/chat", async (request, reply) => {
+10     const { question } = request.body as { question: string };
+11
+12     const response = await graph.invoke({
+13       messages: [new HumanMessage(question)],
+14     });
+15
+16     reply.send(response.output);
+17   });
+18
+19   return app;
+20 }
+```
+
+- **Linha 7**: repare que essa linha fica **fora** da rota, dentro de
+  `createServer()` — o grafo é montado **uma vez** quando o servidor é criado, não a
+  cada requisição. Montar de novo a cada chamada seria desperdício, já que a
+  estrutura do grafo não muda entre requisições.
+- **Linha 10**: extrai `question` do corpo da requisição, com uma anotação de tipo
+  (`as { question: string }`) para o TypeScript saber o formato esperado — mesmo
+  padrão do módulo 1. Diferente do módulo 1, aqui **não há schema de validação do
+  Fastify** — se `question` vier ausente, o erro só aparece mais tarde, dentro do
+  grafo (é uma simplificação proposital do tutorial nesta fase, focada no
+  LangGraph, não na robustez da API).
+- **Linha 12-14 (`graph.invoke(...)`)**: `invoke` é o método criado pelo
+  `.compile()` — executa o grafo do `START` até o `END`. O argumento é o **estado
+  inicial**: só o campo `messages` é passado explicitamente; `output` e `command`
+  não precisam ser informados porque `Annotation.Root` já define `default(...)` para
+  eles (ver `graph.ts`). `invoke` é `async` porque, quando um nó chamar de verdade um
+  modelo de IA (fora do escopo desta aula), isso vai envolver uma requisição de
+  rede.
+- **Linha 13 (`new HumanMessage(question)`)**: embrulha o texto do usuário na classe
+  correta — é assim que o LangChain sabe, dentro do grafo, "quem" disse esse texto.
+- **Linha 16 (`reply.send(response.output)`)**: `graph.invoke(...)` devolve o
+  **estado final**, depois de passar por todos os nós até `END`. Só o campo
+  `output` é enviado como resposta — não o objeto de estado inteiro.
+
+---
+
+## `src/index.ts` — o ponto de entrada
+
+```typescript
+1  import { createServer } from "./server.ts";
+2
+3  const app = createServer();
+4  await app.listen({ port: 3000, host: "localhost" });
+```
+
+- **Linha 4**: `top-level await` — desde uma versão recente do Node, é permitido
+  usar `await` no nível mais alto de um módulo, sem precisar envolver isso numa
+  função `async` separada.
+
+---
+
+## `tests/graph.test.ts` — os três caminhos do grafo
+
+```typescript
+1  import { test } from "node:test";
+2  import assert from "node:assert";
+3  import { createServer } from "../src/server.ts";
+4
+5  test("command upper - transforma a mensagem em upper case", async () => {
+6    const app = createServer();
+7
+8    const response = await app.inject({
+9      method: "POST",
+10     url: "/chat",
+11     payload: { question: "make this message upper please" },
+12   });
+13
+14   const expected = "MAKE THIS MESSAGE UPPER PLEASE";
+15   assert.deepEqual(response.body, expected);
+16 });
+```
+
+- **Linha 1-2**: `node:test` e `node:assert` são módulos **embutidos** no Node — não
+  precisa instalar nenhuma biblioteca de testes externa.
+- **Linha 6**: cria um servidor (e, por dentro, um grafo) **novo e isolado** para
+  cada teste — nenhum teste interfere no estado de outro.
+- **Linha 8-12 (`app.inject`)**: simula uma requisição HTTP sem abrir uma porta de
+  rede de verdade — passa pelo mesmo roteamento e handler que uma requisição real
+  passaria, só mais rápido. `payload` é um **apelido** aceito pelo Fastify para o
+  campo `body` — os dois funcionam igual.
+- **Linha 11**: a palavra `"upper"` dentro da frase é o gatilho que
+  `identifyIntentNode` procura para decidir `command: "upper"`.
+- **Linha 14**: a frase inteira em maiúsculo — o teste valida que **a frase
+  inteira** é transformada, não só a palavra "upper".
+- **Linha 15 (`assert.deepEqual`)**: compara o corpo da resposta com o texto
+  esperado. Como `reply.send(response.output)` (em `server.ts`) manda uma string
+  simples (não um JSON), `response.body` já chega como a string pronta — não precisa
+  de `.json()` aqui, diferente do projeto do módulo 1.
+
+Os outros dois testes (`command lower`, linha 18-29, e `comando desconhecido`, linha
+31-43) seguem exatamente a mesma estrutura, só trocando a pergunta enviada e o texto
+esperado — cobrindo, respectivamente, o caminho `lowerCaseNode` e o caminho
+`fallbackNode`.
+
+---
+
+## Duas decisões de projeto que fogem do tutorial original
+
+### 1. `Annotation.Root` no lugar de Zod
+
+O tutorial (aula 2) ensina a definir o estado do grafo com `z.object({...})` do Zod,
+passado direto para `new StateGraph(...)`. Testando contra a versão realmente pinada
+(`@langchain/langgraph@0.2.17`), essa combinação **não funciona** — dá erro
+`Invalid StateGraph input`, porque suporte nativo a Zod só foi adicionado à
+biblioteca bem depois (a partir de versões `0.2.60+` da série `0.2.x`, e mesmo assim
+com uma API mais verbosa, via uma função `withLangGraph()` por campo). A solução foi
+usar `Annotation.Root`, a forma **nativa** desta versão pinada — mesma ideia (um
+molde do estado, com valores padrão por campo), sintaxe diferente. Nenhuma lógica de
+nó precisou mudar por causa disso.
+
+### 2. Vulnerabilidades conhecidas mantidas de propósito
+
+`npm audit` acusa 9 vulnerabilidades (6 altas) nas dependências transitivas de
+`langchain@0.1.19` (SQL injection em loaders de dados não usados aqui, SSRF em
+carregadores de URL não usados, extração de secrets via serialização, prototype
+pollution). O único fix automático levaria para `langchain@1.5.3` — uma reescrita de
+API completa, incompatível com o que o tutorial ensina (`StateGraph`,
+`addConditionalEdges`, etc. têm formato diferente na v1). Como este é um projeto de
+estudo local, sem exposição a input não confiável de fontes externas, a decisão foi
+manter as versões pinadas pelo tutorial.
+
+## Verifique seu entendimento
+
+1. Por que `replace` (em `graph.ts`) ignora o primeiro argumento e sempre devolve o
+   segundo? Que efeito isso tem no campo `messages` quando um nó devolve o array
+   inteiro via spread?
+2. Qual a diferença entre um **nó** (`identifyIntentNode`) e a **função de
+   roteamento** (`routeByCommand`), em termos do que cada um recebe e do que cada um
+   devolve?
+3. Por que `fallbackNode` não cria mais uma `AIMessage` na versão final, se
+   `chatResponseNode` só roda depois dele na cadeia?
+4. Em `tests/graph.test.ts`, por que `assert.deepEqual(response.body, expected)`
+   funciona sem chamar `.json()` primeiro, diferente do projeto do módulo 1?
+5. O que aconteceria, no `routeByCommand`, se `addConditionalEdges` não tivesse a
+   entrada `fallbackNode: "fallbackNode"` no seu mapa de tradução?
+</script>
+
+<script>
+const LESSONS = [
+  {
+    "id": "01-artigo",
+    "file": "01-artigo-introducao-langchain-langgraph.md",
+    "aula": 1,
+    "tipo": "artigo",
+    "title": "O que é LangChain (e por que ele se chama assim)?",
+    "label": "Introdução: LangChain, LangGraph e LangSmith"
+  },
+  {
+    "id": "01-tutorial",
+    "file": "01-tutorial-configurando-langchain-langgraph.md",
+    "aula": 1,
+    "tipo": "tutorial",
+    "title": "Tutorial: configurando o primeiro projeto LangChain + LangGraph",
+    "label": "Configurando o primeiro projeto"
+  },
+  {
+    "id": "02-artigo",
+    "file": "02-artigo-estado-e-primeiro-node.md",
+    "aula": 2,
+    "tipo": "artigo",
+    "title": "O estado do grafo: a ficha que passa de nó em nó",
+    "label": "O estado do grafo"
+  },
+  {
+    "id": "02-tutorial",
+    "file": "02-tutorial-estado-e-primeiro-node.md",
+    "aula": 2,
+    "tipo": "tutorial",
+    "title": "Tutorial: definindo o estado do grafo e o primeiro node",
+    "label": "Definindo o estado e o 1º node"
+  },
+  {
+    "id": "03-artigo",
+    "file": "03-artigo-nodes-e-edges-lineares.md",
+    "aula": 3,
+    "tipo": "artigo",
+    "title": "Da caixa vazia à lógica de verdade: identifyIntent e chatResponse",
+    "label": "Da caixa vazia à lógica real"
+  },
+  {
+    "id": "03-tutorial",
+    "file": "03-tutorial-nodes-e-edges-lineares.md",
+    "aula": 3,
+    "tipo": "tutorial",
+    "title": "Tutorial: implementando identifyIntent e chatResponse",
+    "label": "Implementando identifyIntent e chatResponse"
+  },
+  {
+    "id": "04-artigo",
+    "file": "04-artigo-pipeline-condicional-e-testes.md",
+    "aula": 4,
+    "tipo": "artigo",
+    "title": "Arestas condicionais: o fluxo que se ramifica de verdade",
+    "label": "Arestas condicionais"
+  },
+  {
+    "id": "04-tutorial",
+    "file": "04-tutorial-pipeline-condicional-e-testes.md",
+    "aula": 4,
+    "tipo": "tutorial",
+    "title": "Tutorial: nós de transformação e aresta condicional",
+    "label": "Nós de transformação e aresta condicional"
+  },
+  {
+    "id": "05-artigo",
+    "file": "05-artigo-fallback-e-ajustes-finais.md",
+    "aula": 5,
+    "tipo": "artigo",
+    "title": "O caminho padrão: fallback, histórico de mensagens e a API por fora",
+    "label": "O caminho padrão (fallback)"
+  },
+  {
+    "id": "05-tutorial",
+    "file": "05-tutorial-fallback-e-ajustes-finais.md",
+    "aula": 5,
+    "tipo": "tutorial",
+    "title": "Tutorial: node de fallback e limpeza do histórico de mensagens",
+    "label": "Node de fallback e ajustes finais"
+  },
+  {
+    "id": "06-anotacao",
+    "file": "06-anotacao-projeto-grafo-langgraph.md",
+    "aula": 6,
+    "tipo": "anotacao",
+    "title": "Anotação: explicação linha a linha do grafo LangGraph (upper/lower/fallback)",
+    "label": "Explicação linha a linha do projeto"
+  }
+];
+const FILE_TO_ID = {
+  "01-artigo-introducao-langchain-langgraph.md": "01-artigo",
+  "01-tutorial-configurando-langchain-langgraph.md": "01-tutorial",
+  "02-artigo-estado-e-primeiro-node.md": "02-artigo",
+  "02-tutorial-estado-e-primeiro-node.md": "02-tutorial",
+  "03-artigo-nodes-e-edges-lineares.md": "03-artigo",
+  "03-tutorial-nodes-e-edges-lineares.md": "03-tutorial",
+  "04-artigo-pipeline-condicional-e-testes.md": "04-artigo",
+  "04-tutorial-pipeline-condicional-e-testes.md": "04-tutorial",
+  "05-artigo-fallback-e-ajustes-finais.md": "05-artigo",
+  "05-tutorial-fallback-e-ajustes-finais.md": "05-tutorial",
+  "06-anotacao-projeto-grafo-langgraph.md": "06-anotacao"
+};
+
+const STATIONS = [1, 2, 3, 4, 5, 6].map((aula) => ({
+  aula,
+  docs: LESSONS.filter((l) => l.aula === aula),
+}));
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function inline(text) {
+  let t = escapeHtml(text);
+  t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+  t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, href) => {
+    const targetId = FILE_TO_ID[href];
+    if (targetId) {
+      return '<button type="button" class="inline-link" data-nav="' + targetId + '">' + label + "</button>";
+    }
+    return label;
+  });
+  return t;
+}
+
+function renderTable(headerLine, bodyLines) {
+  const splitRow = (line) =>
+    line
+      .split("|")
+      .map((s) => s.trim())
+      .filter((s, idx, arr) => !(idx === 0 && s === "") && !(idx === arr.length - 1 && s === ""));
+  const header = splitRow(headerLine);
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  header.forEach((h) => (html += "<th>" + inline(h) + "</th>"));
+  html += "</tr></thead><tbody>";
+  bodyLines.forEach((line) => {
+    const cells = splitRow(line);
+    html += "<tr>";
+    cells.forEach((c) => (html += "<td>" + inline(c) + "</td>"));
+    html += "</tr>";
+  });
+  html += "</tbody></table></div>";
+  return html;
+}
+
+function buildList(items) {
+  let idx = 0;
+  function parseLevel(indent) {
+    let out = "";
+    let type = "ul";
+    while (idx < items.length && items[idx].indent >= indent) {
+      const item = items[idx];
+      type = item.ordered ? "ol" : "ul";
+      idx++;
+      let child = "";
+      if (idx < items.length && items[idx].indent > indent) {
+        child = parseLevel(items[idx].indent);
+      }
+      out += "<li>" + inline(item.text) + child + "</li>";
+    }
+    return "<" + type + ">" + out + "</" + type + ">";
+  }
+  return parseLevel(items[0] ? items[0].indent : 0);
+}
+
+function isTableSeparator(line) {
+  return /^\s*\|?[\s:-]+\|[\s:|-]*$/.test(line) && line.includes("-");
+}
+
+function parseMarkdown(md) {
+  const lines = md.split("\n");
+  let html = "";
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (/^\s*$/.test(line)) {
+      i++;
+      continue;
+    }
+
+    const fence = line.match(/^```(\w*)/);
+    if (fence) {
+      const lang = fence[1] || "texto";
+      const codeLines = [];
+      i++;
+      while (i < lines.length && !/^```/.test(lines[i])) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      i++;
+      html +=
+        '<div class="code-card"><div class="code-lang">' +
+        escapeHtml(lang) +
+        "</div><pre><code>" +
+        escapeHtml(codeLines.join("\n")) +
+        "</code></pre></div>";
+      continue;
+    }
+
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if (h) {
+      const level = h[1].length;
+      html += "<h" + level + ">" + inline(h[2]) + "</h" + level + ">";
+      i++;
+      continue;
+    }
+
+    if (/^-{3,}\s*$/.test(line)) {
+      html += "<hr>";
+      i++;
+      continue;
+    }
+
+    if (/^>\s?/.test(line)) {
+      const qLines = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        qLines.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      html += "<blockquote>" + parseMarkdown(qLines.join("\n")) + "</blockquote>";
+      continue;
+    }
+
+    if (line.includes("|") && lines[i + 1] && isTableSeparator(lines[i + 1])) {
+      const headerLine = line;
+      const bodyLines = [];
+      i += 2;
+      while (i < lines.length && lines[i].includes("|") && lines[i].trim() !== "") {
+        bodyLines.push(lines[i]);
+        i++;
+      }
+      html += renderTable(headerLine, bodyLines);
+      continue;
+    }
+
+    if (/^\s*(-\s+|\d+\.\s+)/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*(-\s+|\d+\.\s+)/.test(lines[i])) {
+        const m = lines[i].match(/^(\s*)(-\s+|(\d+)\.\s+)(.*)$/);
+        items.push({ indent: m[1].length, ordered: !!m[3], text: m[4] });
+        i++;
+      }
+      html += buildList(items);
+      continue;
+    }
+
+    const pLines = [];
+    while (
+      i < lines.length &&
+      lines[i].trim() !== "" &&
+      !/^(#{1,4}\s|```|>\s?|-{3,}\s*$|\s*(-\s+|\d+\.\s+))/.test(lines[i])
+    ) {
+      pLines.push(lines[i]);
+      i++;
+    }
+    if (pLines.length) {
+      html += "<p>" + inline(pLines.join(" ")) + "</p>";
+    } else {
+      i++;
+    }
+  }
+  return html;
+}
+
+const PROGRESS_KEY = "modulo02-langgraph-progress";
+function loadProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function saveProgress(p) {
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+}
+let progress = loadProgress();
+
+const FLAT_ORDER = LESSONS.map((l) => l.id);
+let currentId = FLAT_ORDER[0];
+let lastTipoPerAula = {};
+
+function renderRoute() {
+  const routeEl = document.getElementById("route");
+  routeEl.innerHTML = "";
+  STATIONS.forEach((station, idx) => {
+    const total = station.docs.length;
+    const doneCount = station.docs.filter((d) => progress[d.id]).length;
+    const visited = doneCount === total;
+    const partial = doneCount > 0 && doneCount < total;
+
+    const wrap = document.createElement("div");
+    wrap.className = "relative flex gap-3.5 py-0.5 pl-1";
+
+    if (idx < STATIONS.length - 1) {
+      const lineEl = document.createElement("div");
+      lineEl.className =
+        "absolute left-[15px] top-[26px] bottom-[-3px] w-0.5 " +
+        (visited ? "bg-[var(--accent-route)]" : "bg-[var(--line)]");
+      wrap.appendChild(lineEl);
+    }
+
+    const dot = document.createElement("div");
+    dot.className =
+      "flex-none w-6 h-6 rounded-full border-2 grid place-items-center font-mono text-[0.65rem] z-10 transition-colors " +
+      (visited
+        ? "border-[var(--accent-route)] bg-[var(--accent-route)] text-[var(--bg)]"
+        : partial
+        ? "border-[var(--accent-route)] text-[var(--ink-faint)] bg-[conic-gradient(var(--accent-route)_0_50%,transparent_50%_100%)]"
+        : "border-[var(--line)] bg-[var(--bg)] text-[var(--ink-faint)]");
+    dot.textContent = station.aula === 6 ? "★" : String(station.aula);
+    wrap.appendChild(dot);
+
+    const btn = document.createElement("button");
+    const activeDoc = station.docs.find((d) => d.id === currentId);
+    btn.className =
+      "flex-1 text-left px-2 pt-1 pb-3 rounded-lg transition-colors " +
+      (activeDoc ? "text-[var(--ink)]" : "text-[var(--ink-soft)] hover:text-[var(--ink)]");
+    const first = station.docs[0];
+    btn.innerHTML =
+      '<div class="font-mono text-[0.62rem] tracking-[0.08em] uppercase text-[var(--ink-faint)]">' +
+      (station.aula === 6 ? "Anotação final" : "Aula " + station.aula) +
+      '</div><div class="text-[0.88rem] leading-snug mt-0.5' +
+      (activeDoc ? " font-semibold" : "") +
+      '">' +
+      escapeHtml(first.label) +
+      "</div>";
+    btn.addEventListener("click", () => {
+      const aulaState = lastTipoPerAula[station.aula];
+      const target = station.docs.find((d) => d.tipo === aulaState) || first;
+      navigateTo(target.id);
+    });
+    wrap.appendChild(btn);
+    routeEl.appendChild(wrap);
+  });
+}
+
+const TIPO_COLORS = {
+  artigo: "bg-[var(--accent-artigo-soft)] text-[var(--accent-artigo)]",
+  tutorial: "bg-[var(--accent-tutorial-soft)] text-[var(--accent-tutorial)]",
+  anotacao: "bg-[var(--accent-route-soft)] text-[var(--accent-route)]",
+};
+
+function renderTypeToggle(doc) {
+  const wrap = document.getElementById("typeToggleWrap");
+  const siblings = LESSONS.filter((l) => l.aula === doc.aula);
+  if (siblings.length < 2) {
+    wrap.innerHTML = "";
+    return;
+  }
+  const toggle = document.createElement("div");
+  toggle.className = "inline-flex gap-1.5 p-1 rounded-full mb-7 bg-[var(--bg-elevated)]";
+  siblings.forEach((s) => {
+    const btn = document.createElement("button");
+    const active = s.id === doc.id;
+    btn.className =
+      "px-4 py-1.5 rounded-full text-[0.82rem] font-semibold transition-colors " +
+      (active ? TIPO_COLORS[s.tipo] : "text-[var(--ink-soft)]");
+    btn.textContent = s.tipo === "artigo" ? "Conceito" : "Mão na massa";
+    btn.addEventListener("click", () => navigateTo(s.id));
+    toggle.appendChild(btn);
+  });
+  wrap.innerHTML = "";
+  wrap.appendChild(toggle);
+}
+
+function renderLesson(id) {
+  const doc = LESSONS.find((l) => l.id === id);
+  if (!doc) return;
+  currentId = id;
+  lastTipoPerAula[doc.aula] = doc.tipo;
+
+  document.getElementById("lessonEyebrow").textContent =
+    (doc.aula === 6 ? "Anotação final · " : "Aula " + doc.aula + " · ") +
+    (doc.tipo === "artigo" ? "conceito" : doc.tipo === "tutorial" ? "mão na massa" : "explicação de código");
+  document.getElementById("lessonTitle").textContent = doc.title;
+
+  const tagEl = document.getElementById("docTag");
+  tagEl.className =
+    "inline-block font-mono text-[0.68rem] tracking-[0.06em] uppercase px-2 py-0.5 rounded-md mb-5 " +
+    TIPO_COLORS[doc.tipo];
+  tagEl.textContent = doc.tipo === "artigo" ? "Artigo" : doc.tipo === "tutorial" ? "Tutorial" : "Anotação";
+
+  renderTypeToggle(doc);
+
+  const raw = document.getElementById("doc-" + id).textContent;
+  document.getElementById("content").innerHTML = parseMarkdown(raw);
+
+  const markDone = document.getElementById("markDone");
+  markDone.checked = !!progress[id];
+  document.getElementById("markDoneLabel").textContent = progress[id]
+    ? "Concluído"
+    : "Marcar como concluído";
+
+  const idx = FLAT_ORDER.indexOf(id);
+  document.getElementById("prevBtn").disabled = idx <= 0;
+  document.getElementById("nextBtn").disabled = idx >= FLAT_ORDER.length - 1;
+
+  renderRoute();
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+}
+
+function navigateTo(id) {
+  renderLesson(id);
+}
+
+document.getElementById("markDone").addEventListener("change", (e) => {
+  progress[currentId] = e.target.checked;
+  saveProgress(progress);
+  renderLesson(currentId);
+});
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+  const idx = FLAT_ORDER.indexOf(currentId);
+  if (idx > 0) navigateTo(FLAT_ORDER[idx - 1]);
+});
+document.getElementById("nextBtn").addEventListener("click", () => {
+  const idx = FLAT_ORDER.indexOf(currentId);
+  if (idx < FLAT_ORDER.length - 1) navigateTo(FLAT_ORDER[idx + 1]);
+});
+
+document.getElementById("content").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-nav]");
+  if (btn) navigateTo(btn.dataset.nav);
+});
+
+renderLesson(currentId);
+</script>
+</body>
+</html>
