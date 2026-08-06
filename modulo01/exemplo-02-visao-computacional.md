@@ -1,3 +1,7 @@
+---
+title: "Visão Computacional — Exemplo 02 Duck Hunt"
+---
+
 # Visão Computacional — Exemplo 02 Duck Hunt
 
 **Módulo:** 01 — Fundamentos de IA e LLMs para Programadores

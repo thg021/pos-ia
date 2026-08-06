@@ -1,13 +1,12 @@
 ---
-title: "Glossário técnico — Curso APIs de IA Generativa e Prompt Engineering"
+title: "Glossário técnico — Engenharia de Software com IA Aplicada"
 tipo: glossario
-curso: APIs de IA Generativa e Prompt Engineering
 status: rascunho
 ---
 
 # Glossário técnico
 
-Todos os termos técnicos usados nos 7 módulos do curso, em ordem alfabética. Cada entrada indica em qual módulo o termo aparece primeiro — mas muitos conceitos (Zod, LangGraph, testes) atravessam vários módulos.
+Termos técnicos usados ao longo das anotações de estudo, em ordem alfabética. Cada entrada indica em qual módulo do curso <a href="curso-apis-ia-generativa/index.html">APIs de IA Generativa e Prompt Engineering</a> o termo aparece primeiro — mas muitos conceitos (Zod, LangGraph, testes) atravessam vários módulos, e alguns já vêm de outras áreas (fundamentos de IA, MCP). Ver também <a href="conceitos/index.html">conceitos gerais de IA</a> para explicações mais aprofundadas.
 
 ---
 

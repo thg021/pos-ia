@@ -1,3 +1,7 @@
+---
+title: "Arquitetura do Sistema — Exemplo 02 Duck Hunt"
+---
+
 # Arquitetura do Sistema — Exemplo 02 Duck Hunt
 
 **Módulo:** 01 — Fundamentos de IA e LLMs para Programadores

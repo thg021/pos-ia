@@ -1,3 +1,7 @@
+---
+title: "Exemplo 02 — Duck Hunt com YOLOv5 (Visão Computacional)"
+---
+
 # Exemplo 02 — Duck Hunt com YOLOv5 (Visão Computacional)
 
 **Módulo:** 01 — Fundamentos de IA e LLMs para Programadores

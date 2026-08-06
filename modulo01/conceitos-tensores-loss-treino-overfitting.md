@@ -1,3 +1,7 @@
+---
+title: "Tensores, Loss, Treino vs Inferência e Overfitting"
+---
+
 # Tensores, Loss, Treino vs Inferência e Overfitting
 
 **Módulo:** 01 — Fundamentos de IA e LLMs para Programadores

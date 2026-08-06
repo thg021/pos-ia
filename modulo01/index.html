@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fundamentos de IA e LLMs para Programadores — Anotações</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #5f6368;
+    --card-bg: #f7f7f8; --card-border: #e2e2e4;
+    --accent: #6d4aff; --accent-fg: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15151a; --fg: #f0f0f2; --muted: #a0a0a8;
+      --card-bg: #1f1f26; --card-border: #2e2e38;
+      --accent: #9b82ff; --accent-fg: #15151a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.5; }
+  main { max-width: 780px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  p.subtitle { color: var(--muted); margin-top: 0; margin-bottom: 2rem; }
+  p.subtitle a { color: var(--accent); }
+  h2.grupo { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 2rem 0 0.75rem; }
+  .grid { display: grid; gap: 0.75rem; }
+  a.card { display: block; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1rem 1.25rem; text-decoration: none; color: inherit; transition: border-color 0.15s ease, transform 0.15s ease; }
+  a.card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .card .titulo { font-size: 1rem; font-weight: 600; margin-bottom: 0.2rem; }
+  .card .desc { color: var(--muted); font-size: 0.87rem; }
+  footer { margin-top: 2.5rem; font-size: 0.8rem; color: var(--muted); }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Fundamentos de IA e LLMs para Programadores</h1>
+  <p class="subtitle">Anotações do módulo 1 — redes neurais, visão computacional, TensorFlow.js. <a href="../index.html">&larr; todas as áreas de estudo</a></p>
+
+  <h2 class="grupo">E-commerce recommendations (parte 01)</h2>
+  <div class="grid">
+    <a class="card" href="exemplo-01-ecommerce-recommendations.html">
+      <div class="titulo">Visão geral do projeto</div>
+      <div class="desc">MVC, Worker, eventos — partes 01 a 04.</div>
+    </a>
+    <a class="card" href="conceitos-relu-adam-recommend.html">
+      <div class="titulo">ReLU, Adam optimizer, recommend()</div>
+      <div class="desc">Implementação da função de recomendação linha a linha.</div>
+    </a>
+    <a class="card" href="conceitos-funcoes-de-ativacao.html">
+      <div class="titulo">Funções de ativação</div>
+      <div class="desc">ReLU, Sigmoid, Softmax, Tanh, GELU e quando usar cada uma.</div>
+    </a>
+    <a class="card" href="conceitos-camadas-rede-neural.html">
+      <div class="titulo">Camadas de rede neural</div>
+      <div class="desc">Entrada, ocultas e saída, explicadas com analogias.</div>
+    </a>
+    <a class="card" href="conceitos-tensores-loss-treino-overfitting.html">
+      <div class="titulo">Tensores, Loss, Treino vs Inferência</div>
+      <div class="desc">Overfitting vs underfitting.</div>
+    </a>
+  </div>
+
+  <h2 class="grupo">Duck Hunt com IA (parte 02)</h2>
+  <div class="grid">
+    <a class="card" href="exemplo-02-duck-hunt-yolov5.html">
+      <div class="titulo">Visão geral: Duck Hunt com IA</div>
+      <div class="desc">Fluxo completo e análise linha a linha dos 4 arquivos.</div>
+    </a>
+    <a class="card" href="exemplo-02-visao-computacional.html">
+      <div class="titulo">Detecção vs classificação</div>
+      <div class="desc">Bounding box, confidence score, CLASS_THRESHOLD, coordenadas normalizadas.</div>
+    </a>
+    <a class="card" href="exemplo-02-modelos-pre-treinados.html">
+      <div class="titulo">Modelos pré-treinados</div>
+      <div class="desc">Transfer Learning, YOLO, YOLOv5n, COCO dataset, Graph Model vs Sequential.</div>
+    </a>
+    <a class="card" href="exemplo-02-tensorflow-preprocessamento.html">
+      <div class="titulo">TensorFlow: pré-processamento</div>
+      <div class="desc">tf.browser.fromPixels, resizeBilinear, tf.tidy, tf.dispose, warmup.</div>
+    </a>
+    <a class="card" href="exemplo-02-javascript-avancado.html">
+      <div class="titulo">JavaScript avançado</div>
+      <div class="desc">Web Worker, Generator function*, ImageBitmap, Transferable Objects.</div>
+    </a>
+    <a class="card" href="exemplo-02-arquitetura-sistema.html">
+      <div class="titulo">Arquitetura do sistema</div>
+      <div class="desc">Loop captura→inferência→ação, comunicação Worker↔Main, HUD PIXI.js.</div>
+    </a>
+  </div>
+
+  <h2 class="grupo">Embeddings e RAG</h2>
+  <div class="grid">
+    <a class="card" href="exemplo-13-embeddings-neo4j-rag.html">
+      <div class="titulo">Embeddings com Neo4j (RAG)</div>
+      <div class="desc">Busca semântica em grafo, geração de embeddings, recuperação de contexto.</div>
+    </a>
+  </div>
+
+  <footer>Ver também: <a href="../conceitos/index.html">conceitos gerais de IA</a> e <a href="../glossario-tecnico.html">glossário técnico</a>.</footer>
+</main>
+</body>
+</html>

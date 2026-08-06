@@ -1,3 +1,7 @@
+---
+title: "Camadas de uma Rede Neural — Entrada, Meio e Saída"
+---
+
 # Camadas de uma Rede Neural — Entrada, Meio e Saída
 
 **Módulo:** 01 — Fundamentos de IA e LLMs para Programadores

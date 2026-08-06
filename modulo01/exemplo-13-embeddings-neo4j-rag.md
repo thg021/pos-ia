@@ -1,3 +1,7 @@
+---
+title: "Exemplo 13 — Embeddings + Neo4j + RAG"
+---
+
 # Exemplo 13 — Embeddings + Neo4j + RAG
 
 **Conceito central:** RAG (Retrieval-Augmented Generation) — buscar contexto relevante de um documento antes de gerar resposta com LLM.

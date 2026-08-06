@@ -1,3 +1,7 @@
+---
+title: "TensorFlow.js — Pré-processamento de Imagem"
+---
+
 # TensorFlow.js — Pré-processamento de Imagem
 
 **Módulo:** 01 — Fundamentos de IA e LLMs para Programadores
