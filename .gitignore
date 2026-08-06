@@ -1,3 +1,6 @@
+# Material de scraping/coleta, nao faz parte do conteudo publicado
+scrap/
+
 # Logs
 logs
 *.log

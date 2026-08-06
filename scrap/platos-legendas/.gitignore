@@ -1,8 +1,0 @@
-.venv/
-__pycache__/
-*.pyc
-session.json
-output/
-errors.log
-sem_legenda.log
-.env
